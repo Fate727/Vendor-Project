@@ -1,0 +1,152 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Product Page{% endblock %}
+
+{% block sellermain %}
+<div class="container">
+    <!-- row -->
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+                <!-- pageheader -->
+                <div>
+                    <h2>Products</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'seller-dashboard' %}" class="text-inherit">Dashboard</a>
+                            </li>
+                            <li class="ms-4 active" aria-current="page">Products</li>
+                        </ol>
+                    </nav>
+                </div>
+                <!-- button -->
+                <div>
+                    <a href="{% url 'Addproduct' %}" class="btn btn-primary">Add New Product</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row">
+        <div class="col-xl-12 col-12 mb-5">
+            <div class="card h-100 card-lg">
+                <div class="px-6 py-6">
+                    <div class="row justify-content-between align-items-center g-3">
+                        <div class="col-lg-5 col-md-6 col-12">
+                            <input id="search-box" class="form-control" type="search" placeholder="Search Product..." aria-label="Search" value="{{ request.GET.q|default:'' }}">
+                        </div>
+
+                        <div class="col-xl-3 col-md-4 col-12">
+                            <select id="status-filter" class="form-select">
+                                <option value="">Status</option>
+                                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Available</option>
+                                <option value="disabled" {% if request.GET.status == 'disabled' %}selected{% endif %}>Out of Stock</option>
+                            </select>
+                        </div>
+
+                        <div class="col-auto d-flex align-items-center gap-2">
+                            <div id="live-indicator" class="d-none">
+                                <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                                <span class="ms-2 small">Loading…</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card body -->
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover mb-0 text-nowrap table-borderless table-with-checkbox">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="" id="checkAll" />
+                                            <label class="form-check-label" for="checkAll"></label>
+                                        </div>
+                                    </th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Created Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="product-table-body">
+                                {% include 'SellerModule/partials/_product_rows.html' with products=products %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- pagination + summary -->
+                <div id="pagination-wrapper" class="border-top d-flex justify-content-between align-items-md-center px-6 py-6 flex-md-row flex-column gap-4">
+                    {% include 'SellerModule/partials/_product_pagination.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const searchBox = document.getElementById('search-box');
+    const statusSelect = document.getElementById('status-filter');
+    const tbody = document.getElementById('product-table-body');
+    const paginationWrapper = document.getElementById('pagination-wrapper');
+    const liveIndicator = document.getElementById('live-indicator');
+
+    let controller = null;
+    let debounceTimer = null;
+
+    function setLoading(isLoading){
+        liveIndicator.classList.toggle('d-none', !isLoading);
+    }
+
+    function updateTable(q, status, page=1){
+        if (controller) controller.abort();
+        controller = new AbortController();
+
+        const params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (status) params.set('status', status);
+        params.set('page', page);
+
+        setLoading(true);
+        fetch("{% url 'ajax_products' %}?" + params.toString(), { signal: controller.signal })
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = data.html || '';
+                paginationWrapper.innerHTML = data.pagination || '';
+
+                paginationWrapper.querySelectorAll('a.page-link').forEach(link => {
+                    link.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const pageNum = this.getAttribute('href').split('page=')[1];
+                        updateTable(searchBox.value.trim(), statusSelect.value, pageNum);
+                    });
+                });
+            })
+            .catch(err => { if (err.name !== 'AbortError') console.error(err); })
+            .finally(() => setLoading(false));
+    }
+
+    function triggerUpdate(){
+        updateTable(searchBox.value.trim(), statusSelect.value, 1);
+    }
+
+    searchBox.addEventListener('keyup', function(){
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(triggerUpdate, 250);
+    });
+
+    statusSelect.addEventListener('change', triggerUpdate);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'superadmin.html' %}
+{% load static %}
+
+{% block title %}Seller Requests{% endblock %}
+
+{% block superadmin %}
+<div class="container">
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+                <div>
+                    <h2>Seller Requests</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#" class="text-inherit">Dashboard</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Seller Requests</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-12 col-12 mb-5">
+            <div class="card h-100 card-lg">
+                <div class="p-6">
+                    <div class="row justify-content-between">
+                        <div class="col-md-4 col-12">
+                            <form class="d-flex" role="search">
+                                <label for="searchSellers" class="visually-hidden">Search Sellers</label>
+                                <input class="form-control" type="search" id="searchSellers" placeholder="Search Sellers" aria-label="Search" />
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover table-borderless mb-0 table-with-checkbox text-nowrap">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Store Name</th>
+                                    <th>Store Address</th>
+                                    <th>License Number</th>
+                                    <th>PAN</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for seller in sellers %}
+                                <tr>
+                                    <td>{{ seller.UserId.UserName }}</td>
+                                    <td>{{ seller.UserId.Email }}</td>
+                                    <td>{{ seller.StoreName }}</td>
+                                    <td>{{ seller.StoreAddress }}</td>
+                                    <td>{{ seller.ProductionLicenseNumber }}</td>
+                                    <td>{{ seller.PAN }}</td>
+                                    <td>{{ seller.get_Status_display }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            {% if seller.Status != 'accepted' %}
+                                            <form method="POST" action="{% url 'seller_accept' seller.SellerID %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                                            </form>
+                                            {% endif %}
+
+                                            {% if seller.Status != 'rejected' %}
+                                            <form method="POST" action="{% url 'seller_reject' seller.SellerID %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">No seller requests found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

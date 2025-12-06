@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Store Page{% endblock %}
+
+{% block main %}
+
+<main>
+
+<!-- BREADCRUMB -->
+<div class="mt-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="ms-2"><a href="#!">Home</a></li>
+                        <li class="ms-2"><a href="#!">Shop</a></li>
+                        <li class="breadcrumb-item active ms-2" aria-current="page">My Cart</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CART SECTION -->
+<section class="mt-8 mb-14">
+    <div class="container">
+        <div class="row">
+
+            <!-- LEFT COLUMN -->
+            <div class="col-lg-8">
+                <div class="mb-4">
+                    <h1 class="mb-1">My Cart</h1>
+                    <p>You have {{ cart_items|length }} items in your cart.</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table text-nowrap" style="table-layout: fixed; width: 100%;">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:70px;"></th>
+                                <th style="width:180px;">Product</th>
+                                <th>Units</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Remove</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in cart_items %}
+                           <tr data-cart-id="{{ item.CartID }}">
+
+                                <!-- IMAGE -->
+                                <td class="align-middle">
+                                    <img src="/media/{{ item.ProductID.Images.0 }}" class="icon-shape icon-xxl" alt="">
+                                </td>
+
+                                <!-- PRODUCT NAME -->
+                                <td class="align-middle" style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    <h5 class="fs-6 mb-0">
+                                        <a href="#" class="text-inherit d-block" title="{{ item.ProductID.ProductName }}">
+                                            {{ item.ProductID.ProductName }}
+                                        </a>
+                                    </h5>
+                                    <small>Rs. {{ item.SelectedUnit.price }} / {{ item.SelectedUnit.unit }}</small>
+                                </td>
+
+                                <!-- UNIT TYPE -->
+                                <td class="align-middle">{{ item.UnitType }}</td>
+
+                                <!-- PRICE -->
+                                <td class="align-middle">Rs. {{ item.SelectedUnit.price|floatformat:2 }}</td>
+
+                                <!-- QUANTITY -->
+                                <td class="align-middle">
+                                    <div class="d-flex align-items-center">
+                                        <button class="btn btn-sm btn-outline-secondary quantity-minus">−</button>
+                                        <input type="number" value="{{ item.Quantity }}" min="1" max="10"
+                                               class="form-control form-control-sm text-center mx-2"
+                                               style="width:40px;">
+                                        <button class="btn btn-sm btn-outline-secondary quantity-plus">+</button>
+                                    </div>
+                                </td>
+
+                                <!-- TOTAL -->
+                                <td class="align-middle total-cell">Rs. {{ item.SelectedUnit.price|floatformat:2 }}</td>
+                                 
+                                <!-- REMOVE -->
+                                 <td class="align-middle">
+                                     <a href="#" class="text-danger remove-item" data-cart-id="{{ item.CartID }}">
+                                         <i class="feather-icon icon-trash-2"></i>
+                                     </a>
+                                 </td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN → SUMMARY -->
+         
+                   
+               <div class="col-lg-4 mt-4 mt-lg-0">
+                   <div class="card shadow-sm p-4">
+                     <form method="POST" action="{% url 'checkout' %}">
+                        {% csrf_token %}
+                       <h4 class="mb-3">Order Summary</h4>
+                   
+                       <div class="d-flex justify-content-between mb-2">
+                           <span>Subtotal:</span>
+                           <strong id="summary-subtotal">Rs. {{ subtotal }}</strong>
+                       </div>
+                   
+                       <div class="d-flex justify-content-between mb-2">
+                           <span>Shipping:</span>
+                           <strong id="summary-shipping">Rs. {{ shipping }}</strong>
+                       </div>
+                   
+                       <div class="d-flex justify-content-between mb-3">
+                           <span>Tax:</span>
+                           <strong id="summary-tax">Rs. {{ tax }}</strong>
+                       </div>
+                   
+                       <hr>
+                   
+                       <div class="d-flex justify-content-between fs-5 mb-4">
+                           <strong>Total</strong>
+                           <strong id="summary-total">Rs. {{ total }}</strong>
+                       </div>
+                   
+                       <h5 class="mb-2">Payment Method</h5>
+                   
+                       <div class="form-check">
+                           <input class="form-check-input" type="radio" name="payment" value="Cash" checked>
+                           <label class="form-check-label">Cash on Delivery</label>
+                       </div>
+                   
+                       <div class="form-check">
+                           <input class="form-check-input" type="radio" name="payment" value="eSewa">
+                           <label class="form-check-label">eSewa</label>
+                       </div>
+                   
+                       <div class="form-check">
+                           <input class="form-check-input" type="radio" name="payment" value="Khalti">
+                           <label class="form-check-label">Khalti</label>
+                       </div>
+                   
+                       <button class="btn btn-primary w-100 btn-lg mt-4" type="submit">
+                           Proceed to Checkout
+                       </button>
+                     </form>
+                   </div>
+               </div>
+           
+         
+
+
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- SCRIPT -->
+<script>
+
+   //Update of total and also of quantity
+document.addEventListener("DOMContentLoaded", function () {
+
+    const cartRows = document.querySelectorAll("table tbody tr");
+
+    function updateSummary() {
+        let subtotal = 0;
+
+        cartRows.forEach(row => {
+            const price = parseFloat(row.querySelector("td:nth-child(4)").textContent.replace("Rs. ", "")) || 0;
+            const qtyInput = row.querySelector("input[type='number']");
+            const quantity = parseInt(qtyInput.value) || 1;
+
+            const totalCell = row.querySelector(".total-cell");
+            const itemTotal = price * quantity;
+
+            totalCell.textContent = "Rs. " + itemTotal.toFixed(2);
+            subtotal += itemTotal;
+        });
+
+        const shipping = 5;
+        const tax = +(subtotal * 0.02).toFixed(2);
+        const total = subtotal + shipping + tax;
+
+        document.querySelector("#summary-subtotal").textContent = "Rs. " + subtotal.toFixed(2);
+        document.querySelector("#summary-shipping").textContent = "Rs. " + shipping.toFixed(2);
+        document.querySelector("#summary-tax").textContent = "Rs. " + tax.toFixed(2);
+        document.querySelector("#summary-total").textContent = "Rs. " + total.toFixed(2);
+    }
+
+    function sendQuantityUpdate(cartId, quantity) {
+        fetch("{% url 'update-cart-quantity' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: `cart_id=${cartId}&quantity=${quantity}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                console.error("Update failed:", data.message);
+            }
+        });
+    }
+
+    cartRows.forEach(row => {
+        const minusBtn = row.querySelector(".quantity-minus");
+        const plusBtn = row.querySelector(".quantity-plus");
+        const qtyInput = row.querySelector("input[type='number']");
+        const cartId = row.dataset.cartId;
+
+        function updateQuantity(n) {
+            let val = parseInt(qtyInput.value);
+            val = Math.max(1, Math.min(10, val + n));
+
+            qtyInput.value = val;
+            updateSummary();
+            sendQuantityUpdate(cartId, val);
+        }
+
+        minusBtn.addEventListener("click", () => updateQuantity(-1));
+        plusBtn.addEventListener("click", () => updateQuantity(1));
+
+        qtyInput.addEventListener("change", () => {
+            let val = parseInt(qtyInput.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 10) val = 10;
+
+            qtyInput.value = val;
+            updateSummary();
+            sendQuantityUpdate(cartId, val);
+        });
+    });
+
+    updateSummary();
+});
+
+
+
+document.querySelectorAll(".remove-item").forEach(btn => {
+    btn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        let cartId = this.dataset.cartId;
+        let row = this.closest("tr");
+
+        fetch("{% url 'remove-cart-item' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: `cart_id=${cartId}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                row.remove();        // Remove row immediately
+                updateSummary();     // Recalculate totals
+            } else {
+                console.error(data.message);
+            }
+        });
+    });
+});
+
+</script>
+
+{% endblock %}

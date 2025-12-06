@@ -1,0 +1,213 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Add Products Page{% endblock %}
+
+{% block sellermain %}
+<div class="container">
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-md-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Add New Product</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'seller-dashboard' %}" class="text-inherit">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'products-index' %}" class="text-inherit">Products</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Add New Product</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'products-index' %}" class="btn btn-light">Back to Product</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12 col-12">
+        <div class="card mb-6 card-lg">
+            <div class="card-body p-6">
+                <h4 class="mb-4 h5">Add Product Information</h4>
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+
+                        <!-- Product Name -->
+                        <div class="mb-3 col-lg-6">
+                            <label class="form-label">Product Name</label>
+                            <input type="text" name="product_name" class="form-control" placeholder="Product Name" required />
+                        </div>
+
+                        <!-- Company Name -->
+                        <div class="mb-3 col-lg-6">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" name="company_name" class="form-control" placeholder="Company Name" />
+                        </div>
+
+                        <!-- Stock -->
+                        <div class="mb-3 col-lg-6">
+                            <label class="form-label">Stock</label>
+                            <input type="number" name="stock" class="form-control" placeholder="Stock Quantity" required />
+                        </div>
+
+                        <!-- Main Category -->
+                        <div class="mb-3 col-lg-6">
+                            <label class="form-label">Product Main Category</label>
+                            <select name="category" class="form-select" required>
+                                <option selected disabled>Choose Category</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.category_id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Sub Categories (dynamic) -->
+                        <div class="mb-3 col-lg-12">
+                            <label class="form-label">Product Sub Categories</label>
+                            <div id="subcat-wrapper">
+                                <div class="subcat-item mb-2 row">
+                                    <div class="col-10">
+                                        <input type="text" name="sub_category[]" class="form-control" placeholder="Sub Category" required />
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-danger remove-subcat">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mt-2" id="add-subcat">Add More SubCategory</button>
+                        </div>
+
+                         <!-- Units (dynamic) -->
+                        <div class="mb-3">
+                            <label>Units</label>
+                            <div id="units-wrapper">
+                                <div class="row mb-2 unit-item">
+                                    <div class="col-4">
+                                        <input type="text" name="unit_name[]" class="form-control" placeholder="Unit Name" required />
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="text" name="unit_quantity[]" class="form-control" placeholder="Quantity" required />
+                                    </div>
+                                    <div class="col-4">
+                                        <input type="text" name="unit_price[]" class="form-control" placeholder="Price" required />
+                                    </div>
+                                    <div class="col-12 mt-1">
+                                        <button type="button" class="btn btn-danger btn-sm remove-unit">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mt-2" id="add-unit">Add More Unit</button>
+                        </div>
+
+                        <!-- Specifications (dynamic) -->
+                        <div class="mb-3 col-lg-12">
+                            <label class="form-label">Specifications</label>
+                            <div id="specs-wrapper">
+                                <div class="spec-item mb-2 row">
+                                    <div class="col-5">
+                                        <input type="text" name="spec_name[]" class="form-control" placeholder="Specification Name" required />
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="text" name="spec_value[]" class="form-control" placeholder="Value" required />
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-danger remove-spec">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mt-2" id="add-spec">Add More Specification</button>
+                        </div>
+
+                        <!-- Product Images -->
+                        <div class="mb-3 col-lg-12 mt-5">
+                            <h4 class="mb-3 h5">Product Images</h4>
+                            <input type="file" name="images" class="form-control" multiple required />
+                        </div>
+
+                        <!-- Product Description -->
+                        <div class="mb-3 col-lg-12 mt-5">
+                            <h4 class="mb-3 h5">Product Description</h4>
+                            <textarea name="description" id="editor" class="form-control" rows="5" placeholder="Product Description"></textarea>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary">Add Product</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Add/Remove Specifications
+    document.getElementById('add-spec').addEventListener('click', function(){
+        let wrapper = document.getElementById('specs-wrapper');
+        let newSpec = document.createElement('div');
+        newSpec.classList.add('spec-item', 'mb-2', 'row');
+        newSpec.innerHTML = `
+            <div class="col-5">
+                <input type="text" name="spec_name[]" class="form-control" placeholder="Specification Name" required />
+            </div>
+            <div class="col-5">
+                <input type="text" name="spec_value[]" class="form-control" placeholder="Value" required />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger remove-spec">X</button>
+            </div>`;
+        wrapper.appendChild(newSpec);
+    });
+
+    // Add/Remove Sub Categories
+    document.getElementById('add-subcat').addEventListener('click', function(){
+        let wrapper = document.getElementById('subcat-wrapper');
+        let newSub = document.createElement('div');
+        newSub.classList.add('subcat-item', 'mb-2', 'row');
+        newSub.innerHTML = `
+            <div class="col-10">
+                <input type="text" name="sub_category[]" class="form-control" placeholder="Sub Category" required />
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger remove-subcat">X</button>
+            </div>`;
+        wrapper.appendChild(newSub);
+    });
+    
+        // Add/Remove Units
+    document.getElementById('add-unit').addEventListener('click', function(){
+        let wrapper = document.getElementById('units-wrapper');
+        let newUnit = document.createElement('div');
+        newUnit.classList.add('row', 'mb-2', 'unit-item');
+        newUnit.innerHTML = `
+            <div class="col-4">
+                <input type="text" name="unit_name[]" class="form-control" placeholder="Unit Name" required />
+            </div>
+            <div class="col-4">
+                <input type="text" name="unit_quantity[]" class="form-control" placeholder="Quantity" required />
+            </div>
+            <div class="col-4">
+                <input type="text" name="unit_price[]" class="form-control" placeholder="Price" required />
+            </div>
+            <div class="col-12 mt-1">
+                <button type="button" class="btn btn-danger btn-sm remove-unit">Remove</button>
+            </div>
+        `;
+        wrapper.appendChild(newUnit);
+    });
+
+    document.addEventListener('click', function(e){
+        if(e.target.classList.contains('remove-spec')){
+            e.target.closest('.spec-item').remove();
+        }
+        if(e.target.classList.contains('remove-subcat')){
+            e.target.closest('.subcat-item').remove();
+        }
+        if(e.target.classList.contains('remove-unit')){
+            e.target.closest('.unit-item').remove();
+        }
+    });
+</script>
+{% endblock %}

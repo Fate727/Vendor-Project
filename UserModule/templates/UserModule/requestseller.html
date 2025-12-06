@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Seller Request{% endblock %}
+
+{% block main %}
+<main>
+   <section>
+      <div class="container">
+         <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4 col-12 border-end d-none d-md-block">
+               <div class="pt-10 pe-lg-10">
+                  <ul class="nav flex-column nav-pills nav-pills-dark">
+                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'Order-index' %}">
+                           <i class="feather-icon icon-shopping-bag me-2"></i>Your Orders
+                        </a>
+                     </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'AccountSetting' %}">
+                           <i class="feather-icon icon-settings me-2"></i>Settings
+                        </a>
+                     </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'Address' %}">
+                           <i class="feather-icon icon-map-pin me-2"></i>Address
+                        </a>
+                     </li>
+                     <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'requestseller' %}">
+                           <i class="feather-icon icon-bell me-2"></i>Request Seller
+                        </a>
+                     </li>
+                     <li class="nav-item"><hr /></li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'LogoutAccount' %}">
+                           <i class="feather-icon icon-log-out me-2"></i>Log out
+                        </a>
+                     </li>
+                  </ul>
+               </div>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-lg-9 col-md-8 col-12">
+               <div class="py-6 p-md-6 p-lg-10">
+                  <div class="mb-6">
+                     <h2 class="mb-0">Seller Request</h2>
+                  </div>
+                  
+                  <!-- Check if user already has a request -->
+                  {% if seller_request %}
+                     <div class="alert 
+                        {% if seller_request.Status|lower == 'pending' %}alert-warning
+                        {% elif seller_request.Status|lower == 'accepted' %}alert-success
+                        {% elif seller_request.Status|lower == 'rejected' %}alert-danger
+                        {% else %}alert-info{% endif %}">
+                        Your request is currently: <strong>{{ seller_request.Status|title }}</strong>
+                     </div>
+                  {% else %}
+                     <h5 class="mb-4">Fill in your seller details</h5>
+                     <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                           <label class="form-label">Store Name</label>
+                           <input type="text" name="StoreName" class="form-control" placeholder="Store Name" required />
+                        </div>
+                        <div class="mb-3">
+                           <label class="form-label">Store Address</label>
+                           <input type="text" name="StoreAddress" class="form-control" placeholder="Kathmandu" required />
+                        </div>
+                        <div class="mb-3">
+                           <label class="form-label">Production License Number</label>
+                           <input type="text" name="ProductionLicenseNumber" class="form-control" placeholder="PLN-2025-04567r" required />
+                        </div>
+                        <div class="mb-3">
+                           <label class="form-label">PAN</label>
+                           <input type="text" name="PAN" class="form-control" placeholder="ABCDE1234F" required />
+                        </div>
+                        <div class="mb-3">
+                           <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                     </form>
+                  {% endif %}
+               </div>
+            </div>
+         </div>
+      </div>
+   </section>
+</main>
+{% endblock %}

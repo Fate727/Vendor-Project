@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Shop Page{% endblock %}
+
+{% block main %}
+<main>
+    <!-- section-->
+    <div class="mt-4">
+        <div class="container">
+            <!-- row -->
+            <div class="row">
+                <!-- col -->
+                <div class="col-12">
+                    <!-- breadcrumb -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'user-index' %}">Home</a></li>
+                            <li class="ms-3"><a href="{% url 'Shop-index' %}">Shop</a></li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- section -->
+    <div class="mt-8 mb-lg-14 mb-8">
+        <div class="container">
+            <div class="row gx-10">
+                <aside class="col-lg-3 col-md-4 mb-6 mb-md-0">
+                   <form method="POST" id="filterForm">
+                       {% csrf_token %}
+                       <div class="offcanvas offcanvas-start offcanvas-collapse w-md-50" tabindex="-1" id="offcanvasCategory" aria-labelledby="offcanvasCategoryLabel">
+                      
+                           <!-- Offcanvas header for mobile -->
+                           <div class="offcanvas-header d-lg-none">
+                               <h5 class="offcanvas-title" id="offcanvasCategoryLabel">Filter</h5>
+                               <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                           </div>
+                         
+                           <!-- Offcanvas body -->
+                           <div class="offcanvas-body ps-lg-2 pt-lg-0">
+                         
+                               <!-- Categories Filter -->
+                               <div class="mb-8">
+                                   <h5 class="mb-3">Categories</h5>
+                               
+                                   <input type="search" class="form-control mb-3" placeholder="Search ..." id="Search" name="search" value="{{ search_query }}"/>
+
+                                    {% for cat in categories %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.category_id }}" id="cat{{ cat.category_id }}"
+                                               {% if cat.category_id|stringformat:"s" in selected_categories %}checked{% endif %}>
+                                        <label class="form-check-label" for="cat{{ cat.category_id }}">
+                                            {{ cat.name }}
+                                        </label>
+                                    </div>
+                                    {% empty %}
+                                    <p>No categories available.</p>
+                                    {% endfor %}
+                               </div>
+                            
+                               <!-- Submit Button -->
+                               <button type="submit" class="btn btn-dark w-100 mb-4">Apply Filters</button>
+                            
+                               <!-- Banner -->
+                               <div class="position-relative">
+                                   <div class="position-absolute p-5 py-8">
+                                       <h3 class="mb-0">Fresh Fruits</h3>
+                                       <p>Get Upto 25% Off</p>
+                                       <a href="#" class="btn btn-dark">
+                                           Shop Now
+                                           <i class="feather-icon icon-arrow-right ms-1"></i>
+                                       </a>
+                                   </div>
+                                  
+                                   <img src="{% static 'assets/images/banner/assortment-citrus-fruits.png' %}"
+                                        alt="" class="img-fluid rounded" />
+                               </div>
+                            
+                           </div>
+                       </div>
+                   </form>
+
+                </aside>
+
+                <section class="col-lg-9 col-md-12">
+                    <!-- card -->
+                    <div class="card mb-4 bg-light border-0">
+                        <div class="card-body p-9">
+                            <h2 class="mb-0 fs-1">Products section</h2>
+                        </div>
+                    </div>
+
+                    <!-- list icon -->
+                    <div class="d-lg-flex justify-content-between align-items-center">
+                        <div class="mb-3 mb-lg-0">
+                            <p class="mb-0">
+                                <span class="text-dark">{{ products|length }}</span>
+                                Products found
+                            </p>
+                        </div>
+
+                        <!-- icon -->
+                        <div class="d-md-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="ms-2 d-lg-none">
+                                    <a class="btn btn-outline-gray-400 text-muted" data-bs-toggle="offcanvas" href="#offcanvasCategory" role="button" aria-controls="offcanvasCategory">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter me-2">
+                                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                        </svg>
+                                        Filters
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex mt-2 mt-lg-0">
+                                <div class="me-2 flex-grow-1">
+                                    <select class="form-select">
+                                        <option selected>Show: 50</option>
+                                        <option value="10">10</option>
+                                        <option value="20">20</option>
+                                        <option value="30">30</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select class="form-select">
+                                        <option selected>Sort by: Featured</option>
+                                        <option value="Low to High">Price: Low to High</option>
+                                        <option value="High to Low">Price: High to Low</option>
+                                        <option value="Release Date">Release Date</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- row -->
+                    <div class="row g-4 row-cols-xl-4 row-cols-lg-3 row-cols-2 row-cols-md-2 mt-2">
+                        {% for product in products %}
+                        <div class="col">
+                            <div class="card card-product">
+                                <div class="card-body">
+                                    <div class="text-center position-relative">
+                                        <a href="#">
+                                            {% if product.Images %}
+                                            <img src="/media/{{ product.Images.0 }}" alt="{{ product.ProductName }}" class="mb-3 img-fluid" style="width: 300px; height: 220px; object-fit: cover; border-radius: 4px;" />
+                                            {% else %}
+                                            <img src="{% static 'assets/images/products/default.jpg' %}" alt="{{ product.ProductName }}" class="mb-3 img-fluid" />
+                                            {% endif %}
+                                        </a>
+
+                                        <div class="card-product-action">
+                                            <a href="#!" class="btn-action quick-view-btn" data-bs-toggle="modal" data-bs-target="#quickViewModal" data-product-id="{{ product.ProductID }}">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-small mb-1">
+                                        {% if product.Category %}
+                                        <a href="#!" class="text-decoration-none text-muted"><small>{{ product.Category.name }}</small></a>
+                                        {% endif %}
+                                    </div>
+
+                                    <h2 class="fs-6">
+                                        <a href="#" class="text-inherit text-decoration-none">{{ product.ProductName }}</a>
+                                    </h2>
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                            {% if product.Units %}
+                                            <span class="text-dark">Rs{{ product.Units.0.price }}</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div>
+                                            <input type="hidden" class="selected-unit-unit" value="{{ product.Units.0.unit }}">
+                                            <input type="hidden" class="selected-unit-amount" value="{{ product.Units.0.quantities }}">
+                                            <input type="hidden" class="selected-unit-price" value="{{ product.Units.0.price }}">
+                                            <button class="btn btn-primary btn-sm add-to-cart-btn" data-product-id="{{ product.ProductID }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-center py-4">No products available.</p>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row mt-8">
+                        <div class="col">
+                            <nav>
+                                <ul class="pagination">
+                                    <li class="page-item disabled">
+                                        <a class="page-link mx-1" href="#" aria-label="Previous">
+                                            <i class="feather-icon icon-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item"><a class="page-link mx-1 active" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link mx-1" href="#">2</a></li>
+                                    <li class="page-item"><a class="page-link mx-1" href="#">...</a></li>
+                                    <li class="page-item"><a class="page-link mx-1" href="#">12</a></li>
+                                    <li class="page-item">
+                                        <a class="page-link mx-1" href="#" aria-label="Next">
+                                            <i class="feather-icon icon-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% include 'UserModule/partials/_quick_view_modal.html' %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".add-to-cart-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            const productDiv = this.closest("div"); // parent div containing hidden inputs
+            const productId = this.dataset.productId;
+
+            const unit = productDiv.querySelector(".selected-unit-unit").value;
+            const amount = productDiv.querySelector(".selected-unit-amount").value;
+            const price = productDiv.querySelector(".selected-unit-price").value;
+            
+
+            const quantity = 1; // or get from input if you have a quantity input field
+
+            const selectedUnit = {
+                unit: unit,
+                amount: amount,
+                price: price
+            };
+
+            fetch("{% url 'add_to_cart' product_id=0 %}".replace("/0/", `/${productId}/`), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    quantity: quantity,
+                    unit: selectedUnit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect; // redirect to login
+                } else if (data.message) {
+                    alert(data.message); // simple feedback
+                } else if (data.error) {
+                    console.error(data.error);
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    });
+});
+</script>
+{% endblock %}

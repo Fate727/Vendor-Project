@@ -1,0 +1,84 @@
+{% extends 'superadmin.html' %}
+{% load static %}
+
+{% block title %}Add Users Page{% endblock %}
+
+{% block superadmin %}
+
+<div class="container">
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div>
+                <h2>Create Customer</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'superadmin_dashboard' %}" class="text-inherit">Dashboard</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Create</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow border-0">
+                <div class="card-body d-flex flex-column gap-8 p-7">
+                    <div class="d-flex flex-column gap-4">
+                        <h3 class="mb-0 h6">Customer Information</h3>
+                        <form class="row g-3 needs-validation" method="POST" novalidate>
+                            {% csrf_token %}
+
+                            <div class="col-lg-6 col-12">
+                                <label for="fullname" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" name="fullname" class="form-control" id="fullname" placeholder="Full Name" required />
+                                <div class="invalid-feedback">Please enter full name</div>
+                            </div>
+
+                            <div class="col-lg-6 col-12">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" name="username" class="form-control" id="username" placeholder="Username" required />
+                                <div class="invalid-feedback">Please enter username</div>
+                            </div>
+
+                            <div class="col-lg-6 col-12">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" id="email" placeholder="Email Address" required />
+                                <div class="invalid-feedback">Please enter email</div>
+                            </div>
+
+                            <div class="col-lg-6 col-12">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="text" name="phone" class="form-control" id="phone" placeholder="Phone Number" required />
+                                <div class="invalid-feedback">Please enter phone number</div>
+                            </div>
+
+                            <div class="col-lg-6 col-12">
+                                <label for="address" class="form-label">Address</label>
+                                <input type="text" name="address" class="form-control" id="address" placeholder="Address" required />
+                                <div class="invalid-feedback">Please enter address</div>
+                            </div>
+
+                            <div class="col-lg-6 col-12">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" id="password" placeholder="Enter password" required />
+                                <div class="invalid-feedback">Please enter password</div>
+                            </div>
+
+                            <div class="col-12 mt-3">
+                                <div class="d-flex flex-column flex-md-row gap-2">
+                                    <button class="btn btn-primary" type="submit">Create New Customer</button>
+                                    <a href="{% url 'superadmin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

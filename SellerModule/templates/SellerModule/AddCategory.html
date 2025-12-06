@@ -1,0 +1,114 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Add Category Page{% endblock %}
+
+{% block sellermain %}
+<div class="container">
+    <!-- Page header -->
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-md-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Add New Category</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#" class="text-inherit">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="#" class="text-inherit">Categories</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Add New Category</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'category-index' %}" class="btn btn-light">Back to Categories</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if message %}
+        <div class="alert alert-success">{{ message }}</div>
+        {% if file_url %}
+            <p>Uploaded Image URL: <a href="{{ file_url }}" target="_blank">{{ file_url }}</a></p>
+        {% endif %}
+    {% endif %}
+
+    <!-- Card -->
+    <div class="row">
+        <div class="col-lg-12 col-12">
+            <div class="card mb-6 shadow border-0">
+                <div class="card-body p-6">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Category Image -->
+                      <h4 class="mb-5 h5">Category Image</h4>
+                        <div class="mb-4 d-flex">
+                            <div class="position-relative">
+                                <!-- Preview image -->
+                                <img id="categoryPreview" class="image icon-shape icon-xxxl bg-light rounded-4"
+                                     src="{% static 'assets/images/icons/bakery.svg' %}" alt="Image" />
+                                <div class="file-upload position-absolute end-0 top-0 mt-n2 me-n1">
+                                    <input type="file" name="category_image" class="form-control" onchange="previewCategoryImage(event)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Information -->
+                        <h4 class="mb-4 h5 mt-5">Category Information</h4>
+                        <div class="row">
+
+                            <!-- Category Name -->
+                            <div class="mb-3 col-lg-6">
+                                <label class="form-label">Category Name</label>
+                                <input type="text" name="category_name" class="form-control" placeholder="Category Name" />
+                            </div>
+
+                            <!-- Status -->
+                            <div class="mb-3 col-lg-12">
+                                <label class="form-label">Status</label><br />
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="Status" id="statusActive" value="active" checked />
+                                    <label class="form-check-label" for="statusActive">Active</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="Status" id="statusDisabled" value="disabled" />
+                                    <label class="form-check-label" for="statusDisabled">Disabled</label>
+                                </div>
+                            </div>
+
+                            <!-- Submit buttons -->
+                            <div class="col-lg-12">
+                                <button type="submit" class="btn btn-primary">Create Category</button>
+                                <a href="{% url 'category-index' %}" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewCategoryImage(event) {
+    const input = event.target;
+    const preview = document.getElementById('categoryPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result; // Set preview image
+        }
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.src = "{% static 'assets/images/icons/bakery.svg' %}"; // fallback
+    }
+}
+</script>
+
+{% endblock %}

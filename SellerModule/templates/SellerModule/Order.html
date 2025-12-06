@@ -1,0 +1,247 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Order List Page{% endblock %}
+
+{% block sellermain %}
+<div class="container">
+    <!-- row -->
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <!-- page header -->
+            <div>
+                <h2>Order List</h2>
+                <!-- breadcrumb -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'seller-dashboard' %}">Dashboard</a></li>
+                        <li class="ms-2 active" aria-current="page">Order List</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <!-- row -->
+    <div class="row">
+        <div class="col-xl-12 col-12 mb-5">
+            <!-- card -->
+            <div class="card h-100 card-lg">
+                <div class="p-6">
+                    <div class="row justify-content-between">
+                        <div class="col-md-4 col-12 mb-2 mb-md-0">
+                            <!-- form -->
+                            <form class="d-flex" role="search" method="GET">
+                                <input class="form-control" type="search" placeholder="Search by product name..." 
+                                       name="search" value="{{ search_query|default:'' }}" />
+                                <button class="btn btn-outline-primary ms-2" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                {% if search_query %}
+                                <a href="?{% if status_filter %}status={{ status_filter }}{% endif %}" 
+                                   class="btn btn-outline-secondary ms-2">
+                                    Clear
+                                </a>
+                                {% endif %}
+                            </form>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-12">
+                            <!-- status filter -->
+                            <form method="GET" id="statusForm">
+                                <select class="form-select" name="status" onchange="this.form.submit()">
+                                    <option value="">All Status</option>
+                                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- card body -->
+                <div class="card-body p-0">
+                    <!-- table responsive -->
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover text-nowrap table-borderless mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Product</th>
+                                    <th>Customer</th>
+                                    <th>Date & Time</th>
+                                    <th>Payment</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                {% with transaction=order.transaction product_data=order.product_data product=order.product_obj %}
+                                <tr>
+                                    <td>
+                                        <a href="#" class="text-reset">#{{ transaction.TransactionID }}</a>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <!-- Product Image -->
+                                            {% if product and product.Images %}
+                                            <img src="/media/{{ product.Images.0 }}" 
+                                                 alt="{{ product.ProductName }}" 
+                                                 class="icon-shape icon-md rounded" 
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                            {% else %}
+                                            <div class="icon-shape icon-md bg-light rounded d-flex align-items-center justify-content-center"
+                                                 style="width: 60px; height: 60px; border-radius: 4px;">
+                                                <i class="bi bi-box-seam fs-4 text-primary"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div class="ms-3">
+                                                <h6 class="mb-0 fw-semibold" 
+                                                style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    {% if product %}
+                                                        {{ product.ProductName }}
+                                                    {% else %}
+                                                        {{ product_data.product_name|default:"Product" }}
+                                                    {% endif %}
+                                                </h6>
+                                                <small class="text-muted">
+                                                    Qty: {{ product_data.quantity|default:"1" }} × {{ product_data.unit|default:"unit" }}
+                                                </small>
+                                                {% if product %}
+                                                <br><small class="text-muted">ID: #{{ product.ProductID }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <h6 class="mb-0">{{ transaction.UserID.Name|default:"Customer" }}</h6>
+                                            <small class="text-muted">{{ transaction.UserID.Email|default:"" }}</small>
+                                        </div>
+                                    </td>
+                                    
+                                    <td>
+                                        <div style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                             title="{{ transaction.CreatedAt|date:'F d, Y h:i:s A' }}">
+                                            {{ transaction.CreatedAt|date:"d M Y (h:i a)" }}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-dark">
+                                            {{ transaction.PaymentMethod|default:"Cash" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if transaction.Status == 'completed' %}
+                                        <span class="badge bg-light-success text-dark-success">Completed</span>
+                                        {% elif transaction.Status == 'pending' %}
+                                        <span class="badge bg-light-warning text-dark-warning">Pending</span>
+                                        {% elif transaction.Status == 'cancelled' %}
+                                        <span class="badge bg-light-danger text-dark-danger">Cancelled</span>
+                                        {% else %}
+                                        <span class="badge bg-light-secondary">{{ transaction.Status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>Rs{{ transaction.TotalAmount|floatformat:2 }}</strong>
+                                    </td>
+                                    <td>
+                                        <!-- Compact Vertical Button Group -->
+                                        <div class="btn-group-vertical" role="group" aria-label="Order actions">
+                                            <!-- View Details Button -->
+                                            <a href="#" 
+                                               class="btn btn-sm btn-info"
+                                               title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <!-- Status Update Buttons (only for pending orders) -->
+                                            {% if transaction.Status == 'pending' %}
+                                            <div class="d-flex">
+                                                
+                                               <a href="{% url 'update-order-status' transaction.TransactionID 'completed' %}" 
+                                                  class="btn btn-sm btn-success flex-fill"
+                                                  onclick="return confirm('Mark order #{{ transaction.TransactionID }} as completed?')"
+                                                  title="Mark as Completed">
+                                                   <i class="bi bi-check-lg"></i>
+                                               </a>
+
+                                                <a href="{% url 'update-order-status' transaction.TransactionID 'cancelled' %}" 
+                                                   class="btn btn-sm btn-danger flex-fill"
+                                                   onclick="return confirm('Cancel order?')"
+                                                   title="Cancel Order">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-cart-x fs-1"></i>
+                                            <h5 class="mt-3">No Orders Found</h5>
+                                            <p>You haven't received any orders yet.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                {% if orders.has_other_pages %}
+                <div class="border-top d-md-flex justify-content-between align-items-center p-6">
+                    <span>
+                        Showing {{ orders.start_index }} to {{ orders.end_index }} of {{ orders.paginator.count }} entries
+                    </span>
+                    <nav class="mt-2 mt-md-0">
+                        <ul class="pagination mb-0">
+                            {% if orders.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            {% endif %}
+                            
+                            {% for i in orders.paginator.page_range %}
+                                {% if orders.number == i %}
+                                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                        {{ i }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if orders.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    Next
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

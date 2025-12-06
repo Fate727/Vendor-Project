@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+      <meta content="Codescandy" name="author" />
+      <title>{% block title %}Vendor Shop{% endblock %}</title>
+
+   {% load static %}
+
+   <link href="{% static 'assets/libs/slick-carousel/slick/slick.css' %}" rel="stylesheet" />
+   <link href="{% static 'assets/libs/slick-carousel/slick/slick-theme.css' %}" rel="stylesheet" />
+   <link href="{% static 'assets/libs/tiny-slider/dist/tiny-slider.css' %}" rel="stylesheet" />
+
+   <link rel="shortcut icon" type="image/x-icon" href="{% static 'assets/images/favicon/favicon.ico' %}" />
+
+   <link href="{% static 'assets/libs/bootstrap-icons/font/bootstrap-icons.min.css' %}" rel="stylesheet" />
+   <link href="{% static 'assets/libs/simplebar/dist/simplebar.min.css' %}" rel="stylesheet" />
+   <link href="{% static 'assets/libs/feather-webfont/dist/feather-icons.css' %}" rel="stylesheet" />
+
+   <link rel="stylesheet" href="{% static 'assets/css/theme.min.css' %}" />
+
+     
+   </head>
+
+   <body>
+      <!-- navbar -->
+      <div class="border-bottom">
+         <div class="py-5">
+            <div class="container">
+               <div class="row w-100 align-items-center gx-lg-2 gx-0">
+                  <div class="col-xxl-2 col-lg-3 col-md-6 col-5">
+                     <a class="navbar-brand d-none d-lg-block" href="index.html">
+                        <h2>Vendor Shop</h2>
+                     </a>
+                     <div class="d-flex justify-content-between w-100 d-lg-none">
+                        <a class="navbar-brand" href="index.html">
+                           <h2>Vendor Shop</h2>
+                        </a>
+                     </div>
+                  </div>
+                  <div class="col-xxl-5 col-lg-5 d-none d-lg-block">
+                     <form action="#">
+                        <div class="input-group">
+                           <input class="form-control rounded" type="search" placeholder="Search for products" />
+                           <span class="input-group-append">
+                              <button class="btn bg-white border border-start-0 ms-n10 rounded-0 rounded-end" type="button">
+                                 <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="feather feather-search">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                 </svg>
+                              </button>
+                           </span>
+                        </div>
+                     </form>
+                  </div>
+                  <div class="col-md-2 col-xxl-3 d-none d-lg-block"></div>
+                  <div class="col-lg-2 col-xxl-2 text-end col-md-6 col-7">
+                     <div class="list-inline">
+                           <div class="list-inline-item me-5">
+                               {% if request.session.uid %}
+                                   <a href="{% url 'AccountSetting' %}" class="text-muted">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user">
+                                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                           <circle cx="12" cy="7" r="4"></circle>
+                                       </svg>
+                                   </a>
+
+                               {% else %}
+                                   <a href="{% url 'SignIn-index' %}" class="text-muted">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user">
+                                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                           <circle cx="12" cy="7" r="4"></circle>
+                                       </svg>
+                                   </a>
+                               {% endif %}
+                           </div>
+            
+                        <div class="list-inline-item me-5 me-lg-0">
+                           <a class="text-muted position-relative" href="{% url 'Cart' %}">
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 width="20"
+                                 height="20"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="2"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round"
+                                 class="feather feather-shopping-bag">
+                                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                 <line x1="3" y1="6" x2="21" y2="6"></line>
+                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
+                              </svg>
+                                 <span class="visually-hidden">items in cart</span>
+                           </a>
+                        </div>
+
+                        <div class="list-inline-item d-inline-block d-lg-none">
+                           <!-- Button -->
+                           <button
+                              class="navbar-toggler collapsed"
+                              type="button"
+                              data-bs-toggle="offcanvas"
+                              data-bs-target="#navbar-default"
+                              aria-controls="navbar-default"
+                              aria-label="Toggle navigation">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-text-indent-left text-primary" viewBox="0 0 16 16">
+                                 <path
+                                    d="M2 3.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm.646 2.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L4.293 8 2.646 6.354a.5.5 0 0 1 0-.708zM7 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm-5 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                              </svg>
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <nav class="navbar navbar-expand-lg navbar-light navbar-default py-0 pb-lg-4" aria-label="Offcanvas navbar large">
+            <div class="container">
+               <div class="offcanvas offcanvas-start" tabindex="-1" id="navbar-default" aria-labelledby="navbar-defaultLabel">
+                  <div class="offcanvas-header pb-1">
+                     <a href="index.html">Vendor Shop</a>
+                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                  </div>
+                  <div class="offcanvas-body">
+                     <div class="d-block d-lg-none mb-4">
+                        <form action="#">
+                           <div class="input-group">
+                              <input class="form-control rounded" type="search" placeholder="Search for products" />
+                              <span class="input-group-append">
+                                 <button class="btn bg-white border border-start-0 ms-n10 rounded-0 rounded-end" type="button">
+                                    <svg
+                                       xmlns="http://www.w3.org/2000/svg"
+                                       width="16"
+                                       height="16"
+                                       viewBox="0 0 24 24"
+                                       fill="none"
+                                       stroke="currentColor"
+                                       stroke-width="2"
+                                       stroke-linecap="round"
+                                       stroke-linejoin="round"
+                                       class="feather feather-search">
+                                       <circle cx="11" cy="11" r="8"></circle>
+                                       <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                 </button>
+                              </span>
+                           </div>
+                        </form>
+                        
+                     </div>
+                     
+                     
+                     <div>
+                        <ul class="navbar-nav align-items-center">
+                        
+                           <a class="nav-link "href="{% url 'user-index' %}" role="button" >Home</a>
+                           
+                           <a class="nav-link" href="{% url 'Shop-index' %}" role="button">Shop</a>
+
+                           <a class="nav-link " href="{% url 'Store-index' %}"  role="button">Stores</a>
+                           
+         
+                           <li class="nav-item dropdown w-100 w-lg-auto">
+                              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Pages</a>
+                              <ul class="dropdown-menu">
+                                 {% comment %} Maybe later on {% endcomment %}
+                                 {% comment %} <li><a class="dropdown-item" href="pages/blog.html">Blog</a></li>
+                                 <li><a class="dropdown-item" href="pages/blog-single.html">Blog Single</a></li>
+                                 <li><a class="dropdown-item" href="pages/blog-category.html">Blog Category</a></li> {% endcomment %}
+
+
+                                 <li><a class="dropdown-item" href="{% url 'About-index' %}">About us</a></li>
+                                 
+                                 <li><a class="dropdown-item" href="{% url 'Contact-index' %}">Contact</a></li>
+                              </ul>
+                           </li>
+
+                           <li class="nav-item dropdown w-100 w-lg-auto">
+                              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Account</a>
+                              <ul class="dropdown-menu">
+                                 <li><a class="dropdown-item" href="{% url 'SignIn-index' %}">Sign in</a></li>
+                                 <li><a class="dropdown-item" href="{% url 'SignUp-index' %}">Signup</a></li>
+                                 <li><a class="dropdown-item" href="{% url 'Forgot-index' %}">Forgot Password</a></li>
+                                 <li class="dropdown-submenu dropend">
+                                    <a class="dropdown-item dropdown-list-group-item dropdown-toggle" href="#">My Account</a>
+                                    <ul class="dropdown-menu">
+                                       <li><a class="dropdown-item" href="{% url 'Order-index' %}">Orders</a></li>
+                                       <li><a class="dropdown-item" href="{% url 'AccountSetting' %}">Settings</a></li>
+                                       <li><a class="dropdown-item" href="{% url 'Address' %}">Address</a></li>
+                                       <li><a class="dropdown-item" href="pages/account-payment-method.html">Payment Method</a></li>
+                                       <li><a class="dropdown-item" href="pages/account-notification.html">Notification</a></li>
+                                    </ul>
+                                 </li>
+                              </ul>
+                           </li>
+                     
+                        </ul>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </nav>
+      </div>
+
+
+      
+      <script src="{% static 'assets/js/vendors/validation.js' %}"></script>
+ 
+                           {% if messages %}
+                         <div id="message-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;">
+                             {% for message in messages %}
+                                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                     {{ message }}
+                                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                 </div>
+                             {% endfor %}
+                         </div>
+                      
+                         <script>
+                             // Automatically hide after 3 seconds
+                             setTimeout(function() {
+                                 let container = document.getElementById('message-container');
+                                 if(container) {
+                                     let alerts = container.querySelectorAll('.alert');
+                                     alerts.forEach(function(alert) {
+                                         // Bootstrap 5: use alert's .close() method
+                                         let bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                                         bsAlert.close();
+                                     });
+                                 }
+                             }, 3000); // 3000ms = 3 seconds
+                         </script>
+                     {% endif %}
+
+      {% block main %}
+
+      {% endblock %}
+     
+      <!-- footer -->
+      <footer class="footer">
+         <div class="container">
+            <div class="row g-4 py-4">
+               <div class="col-12 col-md-12 col-lg-4">
+                  <h6 class="mb-4">Categories</h6>
+                  <div class="row">
+                     <div class="col-6">
+                        <!-- list -->
+                        <ul class="nav flex-column">
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Vegetables & Fruits</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Breakfast & instant food</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Bakery & Biscuits</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Atta, rice & dal</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Sauces & spreads</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Organic & gourmet</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Baby care</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Cleaning essentials</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Personal care</a></li>
+                        </ul>
+                     </div>
+                     <div class="col-6">
+                        <!-- list -->
+                        <ul class="nav flex-column">
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Dairy, bread & eggs</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Cold drinks & juices</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Tea, coffee & drinks</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Masala, oil & more</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Chicken, meat & fish</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Paan corner</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Pharma & wellness</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Home & office</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Pet care</a></li>
+                        </ul>
+                     </div>
+                  </div>
+               </div>
+               <div class="col-12 col-md-12 col-lg-8">
+                  <div class="row g-4">
+                     
+                     <div class="col-6 col-sm-6 col-md-3">
+                        <h6 class="mb-4">Get to know us</h6>
+                        <!-- list -->
+                        <ul class="nav flex-column">
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">About</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Contact</a></li>
+                        </ul>
+                     </div>
+
+                     <div class="col-6 col-sm-6 col-md-3">
+                        <h6 class="mb-4">For Consumers</h6>
+                        <ul class="nav flex-column">
+                           <!-- list -->
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Payments</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Shipping</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Product Returns</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">FAQ</a></li>
+                           <li class="nav-item mb-2"><a href="pages/shop-checkout.html" class="nav-link">Shop Checkout</a></li>
+                        </ul>
+                     </div>
+                     <div class="col-6 col-sm-6 col-md-3">
+                        <h6 class="mb-4">Become a Shopper</h6>
+                        <ul class="nav flex-column">
+                           <!-- list -->
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Shopper Opportunities</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Become a Shopper</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Earnings</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Ideas & Guides</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">New Retailers</a></li>
+                        </ul>
+                     </div>
+                     <div class="col-6 col-sm-6 col-md-3">
+                        <h6 class="mb-4">Freshcart programs</h6>
+                        <ul class="nav flex-column">
+                           <!-- list -->
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Freshcart programs</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Gift Cards</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Promos & Coupons</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Freshcart Ads</a></li>
+                           <li class="nav-item mb-2"><a href="#!" class="nav-link">Careers</a></li>
+                        </ul>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="border-top py-4">
+               <div class="row align-items-center">
+                  <div class="col-md-6">
+                     <span class="small text-muted">
+                        </span>
+                        Vendor eCommerce HTML Template. All rights reserved. Powered by
+                        <a href="#">Vendor</a>
+                        .
+                     </span>
+                  </div>
+                 
+               </div>
+            </div>
+         </div>
+      </footer>
+
+      <!-- Javascript-->
+
+            
+      <!-- Libs JS -->
+      <!-- <script src="./assets/libs/jquery/dist/jquery.min.js"></script> -->
+      {% load static %}
+
+         <script src="{% static 'assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+         <script src="{% static 'assets/libs/simplebar/dist/simplebar.min.js' %}"></script>
+
+         <script src="{% static 'assets/js/theme.min.js' %}"></script>
+
+         <script src="{% static 'assets/js/vendors/jquery.min.js' %}"></script>
+         <script src="{% static 'assets/js/vendors/countdown.js' %}"></script>
+         <script src="{% static 'assets/libs/slick-carousel/slick/slick.min.js' %}"></script>
+         <script src="{% static 'assets/js/vendors/slick-slider.js' %}"></script>
+         <script src="{% static 'assets/libs/tiny-slider/dist/min/tiny-slider.js' %}"></script>
+         <script src="{% static 'assets/js/vendors/tns-slider.js' %}"></script>
+         <script src="{% static 'assets/js/vendors/zoom.js' %}"></script>
+
+   </body>
+
+<!-- Mirrored from freshcart.codescandy.com/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 14 Nov 2024 06:08:12 GMT -->
+</html>

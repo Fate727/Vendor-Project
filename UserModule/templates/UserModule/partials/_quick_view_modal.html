@@ -1,0 +1,379 @@
+{% load static %}
+
+
+
+<!-- Modal -->
+      <div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+         <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+               <div class="modal-body p-8">
+                  <div class="modal-body p-8" style="max-height: 80vh; overflow-y: auto; position: relative;">
+                     <div class="position-absolute top-0 end-0 me-3 mt-3">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                     </div>
+                     <div class="row">
+                        <div class="col-lg-6">
+                           <!-- img slide -->
+                           <div class="prodcut productModal quickViewImageContainer" id="productModal" > </div>
+
+                           <!-- product tools -->
+                           <div class="product-tools productModalThumbnails">
+                              <div class="thumbnails row g-3" id="productModalThumbnails"> </div>
+                           </div>
+                           
+                        </div>
+
+                        <div class="col-lg-6">
+                           <div class="ps-lg-8 mt-6 mt-lg-0">
+                              <a href="#!" class="mb-4 d-block" id="quickViewModalCategory">Bakery Biscuits</a>
+
+                              <h2 class="mb-1 h1 " id="quickViewModalLabel">Napolitanke Ljesnjak</h2>
+                           
+                              <div class="mb-4" id="quickViewModalSubCategory" ></div>
+                              
+                           <hr class="my-6" />
+                           
+                           <div class="fs-4 mb-2">
+                              <span class="fw-bold text-dark" id="ProductPrice">$32</span>
+                           </div>
+
+                           <div class="mb-4" id="UnitButtonsContainer">
+                              <button type="button" class="btn btn-outline-secondary">250g</button>
+                              <button type="button" class="btn btn-outline-secondary">500g</button>
+                              <button type="button" class="btn btn-outline-secondary">1kg</button>
+                           </div>
+
+                           <div>
+                              <!-- input -->
+                              <!-- input -->
+                              <div class="input-group input-spinner">
+                               <input type="hidden" id="SelectedProductID">
+                               <input type="hidden" id="SelectedAmount">
+                               <input type="hidden" id="SelectedUnit">
+                               <input type="hidden" id="SelectedPrice">
+
+                               <!-- Quantity spinner -->
+                               <input type="button" value="-" class="button-minus btn btn-sm" data-field="quantity" />
+                               <input type="number" step="1" max="10" value="1" name="quantity" class="quantity-field form-control-sm form-input" />
+                               <input type="button" value="+" class="button-plus btn btn-sm" data-field="quantity" />
+                           </div>
+
+                           <div class="mt-3 row justify-content-start g-2 align-items-center">
+                               <button type="button" id="AddToCartBtn" class="btn btn-primary" data-product-id="{{ product.ProductID }}">
+                                   <i class="feather-icon icon-shopping-bag me-2"></i>
+                                   Add to cart
+                               </button>
+                               </div>
+                                 <h5 class="mt-6 text-dark" style="font-family: 'Arial', sans-serif;">Description</h5>
+                                 <div class="mb-4 mt-2" id="quickViewModalDescription"></div>
+                           </div>
+                        
+                        </div>
+                     </div>
+
+                     <hr class="my-6" />
+                     <div class="row">
+                        <div class="col-lg-6"> 
+                           <div>
+                              <h5 class="fw-bold text-dark mb-3 text-center" style="font-family: 'Arial', sans-serif;">Product Details</h5>
+                             <table class="table table-borderless" id="productSpecificationsTable">
+                               <tbody>
+                                 <!-- Specifications will be injected here dynamically -->
+                               </tbody>
+                             </table>
+                           </div>
+                        </div>
+
+                        <div class="col-lg-6"> 
+                           <h5 class="fw-bold text-dark mb-3 text-center" style="font-family: 'Arial', sans-serif;">Information</h5>
+                           <div>
+                              <table class="table table-borderless">
+                                 <tbody>
+                                    <tr>
+                                       <td>Store Name:</td>
+                                       <td id="StoreName">FBB00255</td>
+                                    </tr>
+                                    <tr>
+                                       <td>Availability:</td>
+                                       <td id="Stock">In Stock</td>
+                                    </tr>
+                                    <tr>
+                                       <td>Type:</td>
+                                       <td id="ProductType">Fruits</td>
+                                    </tr>
+                                    <tr>
+                                       <td>Company:</td>
+                                       <td id="Company">Fruits</td>
+                                    </tr>
+                                    <tr>
+                                       <td>Shipping:</td>
+                                       <td>
+                                          <small>
+                                             01 day shipping.
+                                             <span class="text-muted">( Free pickup today)</span>
+                                          </small>
+                                       </td>
+                                    </tr>
+                                 </tbody>
+                              </table>
+                           </div>
+                        </div>
+
+                     </div>
+
+                  </div>   
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const quickViewButtons = document.querySelectorAll('.quick-view-btn');
+    const modalElement = document.getElementById('quickViewModal');
+    const quickViewModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    // QUICK VIEW BUTTON CLICK
+    quickViewButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const productId = this.dataset.productId;
+
+            // Modal elements
+            const label = document.getElementById('quickViewModalLabel');
+            const category = document.getElementById('quickViewModalCategory');
+            const subCategoryContainer = document.getElementById('quickViewModalSubCategory');
+            const specsTableBody = document.querySelector("#productSpecificationsTable tbody");
+            const descContainer = document.getElementById("quickViewModalDescription");
+            const unitContainer = document.getElementById('UnitButtonsContainer');
+            const addToCartBtn = document.getElementById("AddToCartBtn");
+            const mainContainer = document.getElementById('productModal');
+            const thumbContainer = document.getElementById('productModalThumbnails');
+
+            // Clear previous content
+            label.textContent = "Loading...";
+            category.textContent = "";
+            mainContainer.innerHTML = "";
+            thumbContainer.innerHTML = "";
+            subCategoryContainer.innerHTML = "";
+            specsTableBody.innerHTML = "";
+            unitContainer.innerHTML = "";
+
+            // Set Add to Cart button product ID
+            addToCartBtn.dataset.productId = productId;
+
+            // Fetch product data
+            fetch(`/product/quick-view/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Product info
+                    label.textContent = data.name || "Product not found";
+                    category.textContent = data.category || "";
+                    descContainer.innerHTML = data.description || "<p class='text-muted mb-0'>No description available</p>";
+                    document.getElementById("StoreName").textContent = data.store_name || "Unknown";
+                    document.getElementById("Stock").textContent = data.stock > 0 ? `In Stock - ${data.stock}` : `Out of Stock`;
+                    document.getElementById("ProductType").textContent = data.category || "N/A";
+                    document.getElementById("Company").textContent = data.company || "N/A";
+
+                    // Subcategories
+                    if (data.subcategories && data.subcategories.length > 0) {
+                        let html = "";
+                        data.subcategories.forEach(sub => {
+                            html += `<li class="badge bg-light text-dark me-1" style="font-size:0.7rem;padding:10px 10px;">${sub}</li>`;
+                        });
+                        subCategoryContainer.innerHTML = html;
+                    } else {
+                        subCategoryContainer.innerHTML = "<p class='text-muted mb-0'>No subcategories available</p>";
+                    }
+
+                    // Specifications
+                    if (data.specifications && data.specifications.length > 0) {
+                        data.specifications.forEach(spec => {
+                            const row = document.createElement("tr");
+                            const tdName = document.createElement("td");
+                            const tdValue = document.createElement("td");
+                            tdName.textContent = spec.name;
+                            tdValue.textContent = spec.value;
+                            row.appendChild(tdName);
+                            row.appendChild(tdValue);
+                            specsTableBody.appendChild(row);
+                        });
+                    } else {
+                        const row = document.createElement("tr");
+                        const td = document.createElement("td");
+                        td.setAttribute("colspan", "2");
+                        td.className = "text-muted";
+                        td.textContent = "No specifications available";
+                        row.appendChild(td);
+                        specsTableBody.appendChild(row);
+                    }
+
+                    // Units
+                    if (data.units && data.units.length > 0) {
+                        data.units.forEach((unitItem, index) => {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "btn btn-outline-secondary me-2 unit-btn";
+                            btn.textContent = `${unitItem.quantities}${unitItem.unit}`;
+                            btn.dataset.amount = unitItem.quantities;
+                            btn.dataset.unit = unitItem.unit;
+                            btn.dataset.price = unitItem.price;
+
+                            btn.addEventListener("click", () => {
+                                document.querySelectorAll(".unit-btn").forEach(b => b.classList.remove("active"));
+                                btn.classList.add("active");
+                                document.getElementById("ProductPrice").textContent = `Rs. ${unitItem.price}`;
+                            });
+
+                            unitContainer.appendChild(btn);
+
+                            if (index === 0) {
+                                setTimeout(() => {
+                                    btn.classList.add("active");
+                                    document.getElementById("ProductPrice").textContent = `Rs. ${unitItem.price}`;
+                                }, 10);
+                            }
+                        });
+                    } else {
+                        unitContainer.innerHTML = "<p class='text-muted mb-0'>No units available</p>";
+                    }
+
+                    // Images
+                    const images = data.images && data.images.length > 0 ? data.images : ["{% static 'assets/images/products/no-image.png' %}"];
+                    images.forEach((imgUrl, index) => {
+                        const slideDiv = document.createElement('div');
+                        const img = document.createElement('img');
+                        img.src = imgUrl;
+                        img.alt = "Product Image";
+                        img.width = 522;
+                        img.height = 392;
+                        img.style.objectFit = 'cover';
+                        slideDiv.appendChild(img);
+                        mainContainer.appendChild(slideDiv);
+
+                        const colDiv = document.createElement('div');
+                        colDiv.className = 'col-3';
+                        const thumbDiv = document.createElement('div');
+                        thumbDiv.className = 'thumbnails-img';
+                        const thumbImg = document.createElement('img');
+                        thumbImg.src = imgUrl;
+                        thumbImg.width = 115;
+                        thumbImg.height = 86;
+                        thumbImg.style.objectFit = 'cover';
+                        thumbImg.addEventListener('click', () => { if (window.mainSlider) window.mainSlider.goTo(index); });
+                        thumbDiv.appendChild(thumbImg);
+                        colDiv.appendChild(thumbDiv);
+                        thumbContainer.appendChild(colDiv);
+                    });
+
+                    // Initialize slider
+                    if (mainContainer.children.length > 0) {
+                        if (window.mainSlider) { try { window.mainSlider.destroy(); } catch (e) {} window.mainSlider = null; }
+                        window.mainSlider = tns({
+                            container: '#productModal',
+                            items: 1,
+                            slideBy: 'page',
+                            autoplay: false,
+                            nav: false,
+                            controls: false,
+                            gutter: 0,
+                            mouseDrag: true
+                        });
+                    }
+
+                    // Show modal
+                    quickViewModal.show();
+                })
+                .catch(error => console.error('Error fetching product data:', error));
+        });
+    });
+
+    // Cleanup modal
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        document.body.classList.remove('modal-open');
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        if (window.mainSlider) { try { window.mainSlider.destroy(); } catch (e) {} window.mainSlider = null; }
+        document.getElementById('productModal').innerHTML = "";
+        document.getElementById('productModalThumbnails').innerHTML = "";
+    });
+
+    // ADD TO CART
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest("#AddToCartBtn");
+        if (!btn) return;
+
+        const productId = btn.dataset.productId;
+        if (!productId) return console.error("Product ID not set on Add to Cart button");
+
+        const modal = document.getElementById('quickViewModal');
+
+        // **Read quantity directly from input field**
+        const quantityInput = modal.querySelector(".quantity-field");
+        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+
+        const selectedBtn = modal.querySelector(".unit-btn.active");
+        if (!selectedBtn) return alert("Please select a unit.");
+
+        const unitData = {
+            amount: selectedBtn.dataset.amount,
+            unit: selectedBtn.dataset.unit,
+            price: selectedBtn.dataset.price,
+        };
+
+        fetch(`/cart/add/${productId}/`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({
+                quantity: quantity,  // send exact user quantity
+                unit: unitData
+            })
+        })
+        .then(res => {
+            if (res.status === 401) {
+                window.location.href = "/SignIn";
+                return;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (!data) return;
+
+            if(data.error){
+                console.error(data.error);
+                Swal.fire({ icon: "error", title: "Error", text: data.error });
+            } else {
+                Swal.fire({
+                    icon: "success",
+                    title: "Added to Cart",
+                    text: `Product successfully added! Quantity: ${quantity}`,
+                    timer: 1200
+                });
+            }
+        })
+        .catch(err => console.error(err));
+    });
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+
+
+
+    
+</script>

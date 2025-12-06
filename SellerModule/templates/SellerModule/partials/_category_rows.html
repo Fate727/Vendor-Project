@@ -1,0 +1,55 @@
+{# SellerModule/partials/_category_rows.html #}
+{% load static %}
+{% for category in categories %}
+<tr>
+    <td>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="{{ category.category_id }}" id="category{{ forloop.counter }}" />
+            <label class="form-check-label" for="category{{ forloop.counter }}"></label>
+        </div>
+    </td>
+    <td>
+        <a href="#!">
+            {% if category.image %}
+                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="icon-shape icon-sm" />
+            {% else %}
+                <img src="{% static 'assets/images/icons/default-category.svg' %}" alt="No Image" class="icon-shape icon-sm" />
+            {% endif %}
+        </a>
+    </td>
+    <td><a href="#" class="text-reset">{{ category.name }}</a></td>
+    <td>{{ category.product_set.count }}</td>
+    <td>
+        {% if category.status == 'active' %}
+            <span class="badge bg-light-primary text-dark-primary">Published</span>
+        {% else %}
+            <span class="badge bg-light-danger text-dark-danger">Unpublished</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="dropdown position-relative">
+            <a href="#" class="text-reset" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="feather-icon icon-more-vertical fs-5"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="{% url 'edit_category' category.category_id %}">
+                        <i class="bi bi-pencil-square me-2"></i> Edit
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item text-danger"
+                       href="{% url 'delete_category' category.category_id %}"
+                       onclick="return confirm('Are you sure you want to delete this category?');">
+                        <i class="bi bi-trash me-2"></i> Delete
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="text-center">No categories found.</td>
+</tr>
+{% endfor %}

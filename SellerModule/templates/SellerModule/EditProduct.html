@@ -1,0 +1,188 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block sellermain %}
+<div class="container mt-4">
+    <h2>Edit Product</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Product Name -->
+        <div class="mb-3">
+            <label>Product Name</label>
+            <input type="text" name="product_name" class="form-control" value="{{ product.ProductName }}" required />
+        </div>
+
+        <!-- Company Name -->
+        <div class="mb-3">
+            <label>Company Name</label>
+            <input type="text" name="company_name" class="form-control" value="{{ product.CompanyName }}" />
+        </div>
+
+        <!-- Stock -->
+        <div class="mb-3">
+            <label>Stock</label>
+            <input type="number" name="stock" class="form-control" value="{{ product.Stock }}" required />
+        </div>
+
+
+        <!-- Category -->
+        <div class="mb-3">
+            <label>Main Category</label>
+            <select name="category" class="form-select" required>
+                {% for cat in categories %}
+                    <option value="{{ cat.category_id }}" {% if product.Category_id == cat.category_id %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Subcategories -->
+        <div class="mb-3">
+            <label>Sub Categories</label>
+            <div id="subcat-wrapper">
+                {% for sub in product.SubCategories %}
+                <div class="subcat-item row mb-2">
+                    <div class="col-10">
+                        <input type="text" name="sub_category[]" class="form-control" value="{{ sub }}" required />
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger remove-subcat">X</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary mt-2" id="add-subcat">Add More SubCategory</button>
+        </div>
+
+        <!-- Units -->
+        <div class="mb-3">
+            <label>Units</label>
+            <div id="units-wrapper">
+                {% for u in product.Units %}
+                <div class="row mb-2 unit-item">
+                    <div class="col-4">
+                        <input type="text" name="unit_name[]" class="form-control" value="{{ u.unit }}" required />
+                    </div>
+                    <div class="col-4">
+                        <input type="text" name="unit_quantity[]" class="form-control" value="{{ u.quantities }}" required />
+                    </div>
+                    <div class="col-4">
+                        <input type="text" name="unit_price[]" class="form-control" value="{{ u.price }}" required />
+                    </div>
+                    <div class="col-12 mt-1">
+                        <button type="button" class="btn btn-danger btn-sm remove-unit">Remove</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary mt-2" id="add-unit">Add More Unit</button>
+        </div>
+
+        <!-- Specifications -->
+        <div class="mb-3">
+            <label>Specifications</label>
+            <div id="specs-wrapper">
+                {% for spec in specs %}
+                <div class="spec-item row mb-2">
+                    <div class="col-5">
+                        <input type="text" name="spec_name[]" class="form-control" value="{{ spec.name }}" required />
+                    </div>
+                    <div class="col-5">
+                        <input type="text" name="spec_value[]" class="form-control" value="{{ spec.value }}" required />
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-danger remove-spec">X</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-secondary mt-2" id="add-spec">Add More Specification</button>
+        </div>
+
+        <!-- Existing Images -->
+        <div class="mb-3">
+            <label>Existing Images</label>
+            <div class="row">
+                {% if product.Images %}
+                    {% for img in product.Images %}
+                    <div class="col-2 text-center mb-2">
+                        <img src="/media/{{ img }}" class="img-thumbnail mb-1" style="height:80px;" />
+                        <a href="{% url 'delete-product-image' product.ProductID forloop.counter0 %}" 
+                           class="btn btn-sm btn-danger d-block mt-1">Delete</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No images uploaded for this product.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Add New Images -->
+        <div class="mb-3">
+            <label>Add New Images</label>
+            <input type="file" name="images" class="form-control" multiple />
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="4">{{ product.Description }}</textarea>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary">Update Product</button>
+    </form>
+</div>
+
+<!-- ✅ JS Fixes -->
+<script>
+document.addEventListener('click', function(e){
+    if(e.target.classList.contains('remove-subcat')) e.target.closest('.subcat-item').remove();
+    if(e.target.classList.contains('remove-unit')) e.target.closest('.unit-item').remove();
+    if(e.target.classList.contains('remove-spec')) e.target.closest('.spec-item').remove();
+});
+
+document.getElementById('add-subcat').addEventListener('click', () => {
+    document.getElementById('subcat-wrapper').insertAdjacentHTML('beforeend', `
+        <div class="subcat-item row mb-2">
+            <div class="col-10"><input type="text" name="sub_category[]" class="form-control" required /></div>
+            <div class="col-2"><button type="button" class="btn btn-danger remove-subcat">X</button></div>
+        </div>
+    `);
+});
+
+document.getElementById('add-unit').addEventListener('click', function() {
+    let wrapper = document.getElementById('units-wrapper');
+    let html = `
+        <div class="row mb-2 unit-item">
+            <div class="col-4">
+                <input type="text" name="unit_name[]" class="form-control" placeholder="Unit name" required />
+            </div>
+            <div class="col-4">
+                <input type="text" name="unit_quantity[]" class="form-control" placeholder="Quantity" required />
+            </div>
+            <div class="col-4">
+                <input type="text" name="unit_price[]" class="form-control" placeholder="Price" required />
+            </div>
+            <div class="col-12 mt-1">
+                <button type="button" class="btn btn-danger btn-sm remove-unit">Remove</button>
+            </div>
+        </div>`;
+    wrapper.insertAdjacentHTML('beforeend', html);
+});
+
+document.getElementById('add-spec').addEventListener('click', () => {
+    document.getElementById('specs-wrapper').insertAdjacentHTML('beforeend', `
+        <div class="spec-item row mb-2">
+            <div class="col-5"><input type="text" name="spec_name[]" class="form-control" required /></div>
+            <div class="col-5"><input type="text" name="spec_value[]" class="form-control" required /></div>
+            <div class="col-2"><button type="button" class="btn btn-danger remove-spec">X</button></div>
+        </div>
+    `);
+});
+</script>
+{% endblock %}
