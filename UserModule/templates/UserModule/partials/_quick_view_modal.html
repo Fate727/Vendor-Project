@@ -242,33 +242,64 @@ document.addEventListener('DOMContentLoaded', function () {
                     const images = data.images && data.images.length > 0 ? data.images : ["{% static 'assets/images/products/no-image.png' %}"];
                     images.forEach((imgUrl, index) => {
                         const slideDiv = document.createElement('div');
-                        const img = document.createElement('img');
-                        img.src = imgUrl;
-                        img.alt = "Product Image";
-                        img.width = 522;
-                        img.height = 392;
-                        img.style.objectFit = 'cover';
-                        slideDiv.appendChild(img);
-                        mainContainer.appendChild(slideDiv);
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.alt = "Product Image";
+                    
+                    // Remove fixed dimensions to allow natural size
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.objectFit = 'contain'; // Changed from 'cover' to 'contain'
+                    
+                    // Add loading optimization
+                    img.loading = 'lazy';
+                    
+                    // Create wrapper for better centering
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.style.display = 'flex';
+                    imgWrapper.style.justifyContent = 'center';
+                    imgWrapper.style.alignItems = 'center';
+                    imgWrapper.style.height = '100%';
+                    imgWrapper.style.padding = '20px';
+                    imgWrapper.appendChild(img);
+                    
+                    slideDiv.appendChild(imgWrapper);
+                    mainContainer.appendChild(slideDiv);
+                    
+                    // Thumbnails
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'col-3';
+                    const thumbDiv = document.createElement('div');
+                    thumbDiv.className = 'thumbnails-img';
+                    
+                    const thumbImg = document.createElement('img');
+                    thumbImg.src = imgUrl;
+                    
+                    // Thumbnail fixed size
+                    thumbImg.width = 115;
+                    thumbImg.height = 86;
+                    thumbImg.style.objectFit = 'cover'; // Keep cover for thumbnails
+                    thumbImg.style.cursor = 'pointer';
 
-                        const colDiv = document.createElement('div');
-                        colDiv.className = 'col-3';
-                        const thumbDiv = document.createElement('div');
-                        thumbDiv.className = 'thumbnails-img';
-                        const thumbImg = document.createElement('img');
-                        thumbImg.src = imgUrl;
-                        thumbImg.width = 115;
-                        thumbImg.height = 86;
-                        thumbImg.style.objectFit = 'cover';
-                        thumbImg.addEventListener('click', () => { if (window.mainSlider) window.mainSlider.goTo(index); });
+                        thumbImg.addEventListener('click', () => { 
+                            if (window.mainSlider) window.mainSlider.goTo(index); 
+                        });
+
                         thumbDiv.appendChild(thumbImg);
                         colDiv.appendChild(thumbDiv);
                         thumbContainer.appendChild(colDiv);
                     });
 
-                    // Initialize slider
+                    // Initialize slider with responsive settings
                     if (mainContainer.children.length > 0) {
-                        if (window.mainSlider) { try { window.mainSlider.destroy(); } catch (e) {} window.mainSlider = null; }
+                        if (window.mainSlider) { 
+                            try { window.mainSlider.destroy(); } catch (e) {} 
+                            window.mainSlider = null; 
+                        }
+
+                        // Set container height based on content
+                        mainContainer.style.minHeight = '400px'; // Minimum height
+
                         window.mainSlider = tns({
                             container: '#productModal',
                             items: 1,
@@ -277,8 +308,45 @@ document.addEventListener('DOMContentLoaded', function () {
                             nav: false,
                             controls: false,
                             gutter: 0,
-                            mouseDrag: true
+                            mouseDrag: true,
+
+                            // Responsive settings
+                            responsive: {
+                                992: { // Desktop
+                                    fixedWidth: false, // Allow natural width
+                                    edgePadding: 50
+                                },
+                                768: { // Tablet
+                                    fixedWidth: false,
+                                    edgePadding: 30
+                                },
+                                0: { // Mobile
+                                    fixedWidth: false,
+                                    edgePadding: 20
+                                }
+                            },
+
+                            // Prevent image distortion
+                            autoHeight: true, // Adjusts height based on image
+
+                            // Better navigation
+                            touch: true,
+                            preventScrollOnTouch: 'auto',
+
+                            // Speed optimization
+                            speed: 300,
+                            lazyload: true,
+                            lazyloadSelector: '.tns-lazy-img'
                         });
+
+                        // Optional: Add zoom functionality
+                        if (typeof mediumZoom !== 'undefined') {
+                            const zoom = mediumZoom('#productModal img', {
+                                margin: 24,
+                                background: 'rgba(0, 0, 0, 0.8)',
+                                scrollOffset: 40
+                            });
+                        }
                     }
 
                     // Show modal

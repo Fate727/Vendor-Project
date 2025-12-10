@@ -10,10 +10,107 @@ from django.http import JsonResponse
 import json
 from UserModule.models import Transaction, Users
 from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum, Count
+from decorators import login_required,seller_required
 
+
+@seller_required
+@login_required
 def dashboard(request):
-    return render(request, 'SellerModule/dashboard.html')
+    user_id = request.session.get('uid')
+    
+    if not user_id:
+        messages.error(request, "You must be logged in to view dashboard.")
+        return redirect('user-index')
 
+    try:
+        seller = Seller.objects.get(UserId__UserID=user_id, Status='accepted')
+    except Seller.DoesNotExist:
+        messages.error(request, "You are not an approved seller.")
+        return redirect('user-index')
+
+    today = timezone.now()
+    thirty_days_ago = today - timedelta(days=30)
+    
+    # Get all transactions for this seller
+    transactions = Transaction.objects.filter(SellerID=seller)
+    
+    # Monthly metrics (last 30 days)
+    monthly_transactions = transactions.filter(
+        CreatedAt__gte=thirty_days_ago,
+        Status='completed'
+    )
+    
+    monthly_earnings = monthly_transactions.aggregate(
+        total=Sum('TotalAmount')
+    )['total'] or 0
+    
+    monthly_orders = monthly_transactions.count()
+    monthly_customers = monthly_transactions.values('UserID').distinct().count()
+    
+    # Recent transactions for table
+    recent_transactions = transactions.order_by('-CreatedAt')[:10]
+    recent_orders = []
+    for transaction in recent_transactions:
+        product_name = "Multiple Products"
+        if transaction.Products and len(transaction.Products) > 0:
+            first_product = transaction.Products[0]
+            if isinstance(first_product, dict):
+                try:
+                    product = Product.objects.get(pk=first_product.get('product'))
+                    product_name = product.ProductName[:30] + "..." if len(product.ProductName) > 30 else product.ProductName
+                except:
+                    product_name = "Product"
+        
+        recent_orders.append({
+            'order_number': f"#TR{str(transaction.TransactionID).zfill(6)}",
+            'product_name': product_name,
+            'order_date': transaction.CreatedAt.strftime('%d %B %Y'),
+            'price': f"Rs. {transaction.TotalAmount:,.2f}",
+            'status': transaction.Status,
+            'status_class': {
+                'pending': 'bg-light-warning text-dark-warning',
+                'completed': 'bg-light-success text-dark-success',
+                'cancelled': 'bg-light-danger text-dark-danger'
+            }.get(transaction.Status, 'bg-light-secondary text-dark-secondary')
+        })
+    
+    # Count transactions by status
+    completed_count = transactions.filter(Status='completed').count()
+    pending_count = transactions.filter(Status='pending').count()
+    cancelled_count = transactions.filter(Status='cancelled').count()
+    
+    # Calculate percentages
+    total_transactions = completed_count + pending_count + cancelled_count
+    
+    if total_transactions > 0:
+        completed_percentage = (completed_count / total_transactions) * 100
+        pending_percentage = (pending_count / total_transactions) * 100
+        cancelled_percentage = (cancelled_count / total_transactions) * 100
+    else:
+        # Handle case where there are no transactions
+        completed_percentage = 0
+        pending_percentage = 0
+        cancelled_percentage = 0
+    
+    context = {
+        'seller': seller,
+        'monthly_earnings': monthly_earnings,
+        'monthly_orders': monthly_orders,
+        'monthly_customers': monthly_customers,
+        'recent_orders': recent_orders,
+        'completed_count': completed_count,
+        'pending_count': pending_count,
+        'cancelled_count': cancelled_count,
+        'completed_percentage': completed_percentage,
+        'pending_percentage': pending_percentage,
+        'cancelled_percentage': cancelled_percentage,
+        'current_year': today.year,
+    }
+    
+    return render(request, 'SellerModule/dashboard.html', context)
 
 # Helper function to normalize product images
 def normalize_images(product):
@@ -67,7 +164,6 @@ def productSection(request):
         'initial_total': products.count()
     }
     return render(request, 'SellerModule/ProductSection.html', context)
-
 
 # AJAX Products view
 def ajax_products(request):
@@ -164,7 +260,6 @@ def ajax_categories(request):
     pagination_html = render_to_string('SellerModule/partials/_category_pagination.html', {'categories': paged_categories})
 
     return JsonResponse({'html': rows_html, 'pagination': pagination_html})
-
 
 def AddProduct(request):
     categories = Category.objects.filter(status="active")
@@ -363,6 +458,7 @@ def delete_product(request, product_id):
     messages.success(request, "Product deleted successfully.")
     return redirect('products-index')
 
+
 def AddCategory(request):
     if request.method == 'POST':
         category_name = request.POST.get('category_name', '').strip()
@@ -455,6 +551,7 @@ def EditCategory(request, category_id):
         })
 
     return render(request, 'SellerModule/EditCategory.html', {'category': category})
+
 
 def DeleteCategory(request, category_id):
     category = get_object_or_404(Category, category_id=category_id)
@@ -563,65 +660,190 @@ def Order(request):
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('/')
     
-def update_order_status(request, transaction_id, new_status):
-    # Check if user is logged in
+def update_order_status(request, transaction_id, new_status=None):
+
     user_id = request.session.get('uid')
     if not user_id:
         messages.error(request, "Please login to update order status.")
-        return redirect('user-index')  # Redirect to user home page
+        return redirect('user-index')
     
     try:
-        # Get the user
+        # Get user and seller
         user = Users.objects.get(UserID=user_id)
+        seller = Seller.objects.get(UserId=user)
         
-        # Check if user is a seller
-        try:
-            seller = Seller.objects.get(UserId=user)
-        except Seller.DoesNotExist:
-            # User is not a seller, redirect to user dashboard
-            messages.error(request, "Seller profile not found. Please register as a seller.")
-            return redirect('user-index')  # Redirect to user home/dashboard
-        
-        # Get the transaction (ensure it belongs to this seller)
+        # Get the transaction
         transaction = Transaction.objects.get(
             TransactionID=transaction_id,
             SellerID=seller
         )
         
+        # Get new_status from POST if not in URL
+        if new_status is None and request.method == 'POST':
+            new_status = request.POST.get('status')
+        
         # Validate the new status
         valid_statuses = ['pending', 'completed', 'cancelled']
         if new_status not in valid_statuses:
             messages.error(request, "Invalid status provided.")
-            return redirect('order-index')  # Redirect to seller order list
+            return redirect('order-seller')
         
         # Update the status
         transaction.Status = new_status
         transaction.save()
         
-        # Success message based on new status
+        # Success message
         status_display = dict(Transaction.TRANSACTION_STATUS).get(new_status, new_status)
         messages.success(request, f"Order #{transaction_id} has been marked as {status_display}.")
+        
+        return redirect('order-detail', transaction_id=transaction_id)
         
     except Users.DoesNotExist:
         messages.error(request, "User not found.")
         request.session.flush()
-        return redirect('user-index')  # Redirect to user home/login
-    
+        return redirect('user-index')
+    except Seller.DoesNotExist:
+        messages.error(request, "Seller profile not found.")
+        return redirect('user-index')
     except Transaction.DoesNotExist:
-        # Order doesn't exist or doesn't belong to this seller
-        messages.error(request, "Order not found or you don't have permission to update it.")
-        return redirect('order-seller')  # Redirect to seller order list
-    
+        messages.error(request, "Order not found.")
+        return redirect('order-seller')
     except Exception as e:
         messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('order-seller')  # Redirect to seller order list
+        return redirect('order-seller')
     
-    # Redirect back to seller order list
-    return redirect('order-seller')
 
-def Orderdetail(request):
-    return render(request, 'SellerModule/OrderDetaio.html')
+@login_required
+def order_detail_view(request, transaction_id):
+    # Check if user is logged in
+    user_id = request.session.get('uid')
+    if not user_id:
+        messages.error(request, "Please login to view order details.")
+        return redirect('/')
     
+    try:
+        # 1. Get user
+        user = Users.objects.get(UserID=user_id)
+        
+        # 2. Get seller
+        seller = Seller.objects.get(UserId=user)
+        
+        # 3. Get the specific transaction for this seller
+        try:
+            transaction = Transaction.objects.get(
+                TransactionID=transaction_id,
+                SellerID=seller
+            )
+        except Transaction.DoesNotExist:
+            messages.error(request, "Order not found or you don't have permission to view it.")
+            return redirect('order-seller')
+        
+        # 4. Parse products from JSON - USING THE EXACT STRUCTURE YOU SHARED
+        order_items = []
+        total_items = 0
+        
+        if transaction.Products:
+            # Debug: Print the raw data
+            print(f"DEBUG: Raw Products data: {transaction.Products}")
+            print(f"DEBUG: Type: {type(transaction.Products)}")
+            
+            # Handle string or list
+            products_data = transaction.Products
+            if isinstance(transaction.Products, str):
+                try:
+                    import json
+                    products_data = json.loads(transaction.Products)
+                except json.JSONDecodeError:
+                    products_data = []
+            
+            print(f"DEBUG: Parsed data: {products_data}")
+            print(f"DEBUG: Number of items: {len(products_data)}")
+            
+            for product_data in products_data:
+                print(f"DEBUG: Processing item: {product_data}")
+                
+                product_id = product_data.get('product_id')
+                product_obj = None
+                
+                # Try to get the actual Product object
+                if product_id:
+                    try:
+                        product_obj = Product.objects.get(
+                            ProductID=product_id,
+                            SellerID=seller
+                        )
+                        print(f"DEBUG: Found product object: {product_obj.ProductName}")
+                    except Product.DoesNotExist:
+                        print(f"DEBUG: Product with ID {product_id} not found")
+                        product_obj = None
+                
+                # Extract data using your exact keys
+                product_name = product_data.get('product_name', f'Product ID: {product_id}')
+                quantity = product_data.get('quantity', 1)
+                unit = product_data.get('unit', 'piece')
+                price = product_data.get('unit_price', 0)
+                subtotal = product_data.get('subtotal', quantity * price)
+                
+                order_item = {
+                    'product_data': product_data,
+                    'product': product_obj,  # This matches your template
+                    'product_name': product_name,
+                    'quantity': quantity,
+                    'unit': unit,
+                    'price': price,
+                    'total': subtotal,  # Use subtotal from data
+                }
+                order_items.append(order_item)
+                total_items += quantity
+        
+        print(f"DEBUG: Created {len(order_items)} order items")
+        
+        # 5. Calculate shipping cost
+        shipping_cost = 0
+        if transaction.TotalAmount < 500:
+            shipping_cost = 50
+        
+        grand_total = transaction.TotalAmount + shipping_cost
+        
+        # 6. Get customer information
+        customer = transaction.UserID
+        
+        # 7. Prepare context
+        context = {
+            'user': user,
+            'seller': seller,
+            'transaction': transaction,
+            'customer': customer,
+            'shipping_address': customer.Address if customer.Address else "Address not provided",
+            'order_items': order_items,
+            'total_items': total_items,
+            'subtotal': transaction.TotalAmount,
+            'shipping_cost': shipping_cost,
+            'grand_total': grand_total,
+            'status_choices': dict(Transaction.TRANSACTION_STATUS),
+            'order_date': transaction.CreatedAt.strftime("%B %d, %Y"),
+            'order_time': transaction.CreatedAt.strftime("%I:%M %p"),
+            'has_products': len(order_items) > 0,
+        }
+        
+        return render(request, 'SellerModule/OrderDetail.html', context)
+        
+    except Users.DoesNotExist:
+        messages.error(request, "User not found. Please login again.")
+        request.session.flush()
+        return redirect('/')
+    except Seller.DoesNotExist:
+        messages.error(request, "You need a seller account to view order details.")
+        return redirect('/seller/')
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in order_detail_view: {str(e)}", exc_info=True)
+        
+        messages.error(request, f"An error occurred while loading order details: {str(e)}")
+        return redirect('order-seller')
+ 
+  
 def logout_accout(request):
     request.session.flush()  # clear session
     messages.success(request, "You have been logged out successfully.")

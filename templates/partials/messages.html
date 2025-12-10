@@ -1,0 +1,36 @@
+<!-- templates/partials/messages.html -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;" id="message-container">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert 
+        {% if message.tags == 'error' %}alert-danger
+        {% elif message.tags == 'success' %}alert-success
+        {% elif message.tags == 'warning' %}alert-warning
+        {% elif message.tags == 'info' %}alert-info
+        {% else %}alert-{{ message.tags }}{% endif %}
+        alert-dismissible fade show shadow-lg mb-2" 
+           role="alert" style="min-width: 300px;">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+  // Automatically hide after 3 seconds
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      let container = document.getElementById('message-container');
+      if(container) {
+        let alerts = container.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+          if (alert.classList.contains('show')) {
+            let bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            bsAlert.close();
+          }
+        });
+      }
+    }, 3000);
+  });
+</script>

@@ -12,6 +12,9 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 
+from decorators import role_based_redirect
+
+@role_based_redirect
 def index(request):
     categories = Category.objects.filter(status='active')
     products = Product.objects.filter(Category__status='active')[:8]

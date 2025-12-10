@@ -26,9 +26,10 @@ urlpatterns = [
     # Order Section
     path('Seller-Order', views.Order, name='order-seller'),
     path('order/<int:transaction_id>/update-status/<str:new_status>/', 
-         views.update_order_status, 
-         name='update-order-status'),
-    path('Order-details', views.Orderdetail, name='Order-details'),
+     views.update_order_status, 
+     name='update-order-status'),
+    
+    path('order-details/<int:transaction_id>/', views.order_detail_view, name='order-detail'),
 
     path('SellerLogout', views.logout_accout, name="LogoutSeller"),
 

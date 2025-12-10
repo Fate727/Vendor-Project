@@ -1,0 +1,256 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Order #{{ transaction.TransactionID }} Details{% endblock %}
+
+{% block sellermain %}
+<div class="container">
+    <!-- row -->
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+                <div>
+                    <!-- page header -->
+                    <h2>Order #{{ transaction.TransactionID }} Details</h2>
+                    <!-- breadcrumb -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'order-seller' %}" class="text-inherit">All Orders</a></li>
+                            <li class="ms-2 active" aria-current="page">Order Details</li>
+                        </ol>
+                    </nav>
+                </div>
+                <!-- button -->
+                <div>
+                    <a href="{% url 'order-seller' %}" class="btn btn-primary">Back to all orders</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- row -->
+    <div class="row">
+        <div class="col-xl-12 col-12 mb-5">
+            <!-- card -->
+            <div class="card h-100 card-lg">
+                <div class="card-body p-6">
+                    <div class="d-md-flex justify-content-between">
+                        <div class="d-flex align-items-center mb-2 mb-md-0">
+                            <h2 class="mb-0">Order Information</h2>
+                            <span class="badge 
+                                {% if transaction.Status == 'pending' %}bg-light-warning text-dark-warning
+                                {% elif transaction.Status == 'completed' %}bg-light-success text-dark-success
+                                {% elif transaction.Status == 'cancelled' %}bg-light-danger text-dark-danger
+                                {% else %}bg-light-secondary text-dark-secondary{% endif %} ms-2">
+                                {% if transaction.Status == 'pending' %}Pending
+                                {% elif transaction.Status == 'completed' %}Completed
+                                {% elif transaction.Status == 'cancelled' %}Cancelled
+                                {% else %}{{ transaction.Status }}{% endif %}
+                            </span>
+                        </div>
+                        <!-- select option -->
+                        <div class="d-md-flex">
+                            <!-- Simple dropdown with links -->
+                             {% if transaction.Status == 'pending' %}
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Change Status
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% for value, label in status_choices.items %}
+                                    <li>
+                                        <a class="dropdown-item {% if transaction.Status == value %}active{% endif %}"
+                                           href="{% url 'update-order-status' transaction.TransactionID value %}"
+                                           onclick="return confirm('Mark order #{{ transaction.TransactionID }} as {{ label }}?')">
+                                            {{ label }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-8">
+                        <div class="row">
+                            <!-- Customer Details -->
+                            <div class="col-lg-4 col-md-4 col-12">
+                                <div class="mb-6">
+                                    <h6>Customer Details</h6>
+                                    <p class="mb-1 lh-lg">
+                                        {{ customer.Name|default:customer.FullName|default:"Customer" }}
+                                        <br />
+                                        {{ customer.Email|default:"N/A" }}
+                                        <br />
+                                        {{ customer.Phone|default:"N/A" }}
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Shipping Address -->
+                            <div class="col-lg-4 col-md-4 col-12">
+                                <div class="mb-6">
+                                    <h6>Shipping Address</h6>
+                                    <p class="mb-1 lh-lg">
+                                        {{ shipping_address|linebreaksbr|default:"Address not provided" }}
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Order Details -->
+                            <div class="col-lg-4 col-md-4 col-12">
+                                <div class="mb-6">
+                                    <h6>Order Details</h6>
+                                    <p class="mb-1 lh-lg">
+                                        Order ID:
+                                        <span class="text-dark">#{{ transaction.TransactionID }}</span>
+                                        <br />
+                                        Order Date:
+                                        <span class="text-dark">{{ transaction.CreatedAt|date:"F d, Y" }} at {{ transaction.CreatedAt|date:"h:i A" }}</span>
+                                        <br />
+                                        Payment Method:
+                                        <span class="text-dark">{{ transaction.PaymentMethod|default:"Cash" }}</span>
+                                        <br />
+                                        Order Total:
+                                        <span class="text-dark fs-5">Rs {{ transaction.TotalAmount|floatformat:2 }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Items Table -->
+                <div class="px-6">
+                    <div class="table-responsive">
+                        <!-- Table -->
+                        <table class="table mb-0 text-nowrap table-centered">
+                            <!-- Table Head -->
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Unit</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <!-- tbody -->
+                            <tbody>
+                                {% for item in order_items %}
+                                <!-- Product Item -->
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <!-- Product Image -->
+                                            {% if item.product and item.product.Images %}
+                                            <img src="/media/{{ item.product.Images.0 }}" 
+                                                 alt="{{ item.product.ProductName|default:item.product_name }}" 
+                                                 class="icon-shape icon-md rounded" 
+                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                            {% else %}
+                                            <div class="icon-shape icon-md bg-light rounded d-flex align-items-center justify-content-center"
+                                                 style="width: 60px; height: 60px; border-radius: 4px;">
+                                                <i class="bi bi-box-seam fs-4 text-primary"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div class="ms-3">
+                                                <h6 class="mb-0 fw-semibold">
+                                                    {% if item.product %}
+                                                        {{ item.product.ProductName }}
+                                                    {% else %}
+                                                        {{ item.product_name }}
+                                                    {% endif %}
+                                                </h6>
+                                                {% if item.product %}
+                                                <small class="text-muted">ID: #{{ item.product.ProductID }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.unit|default:"unit" }}</td>
+                                    <td><span class="text-body">Rs {{ item.price|floatformat:2 }}</span></td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td class="fw-semibold">Rs {{ item.total|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-cart-x fs-1"></i>
+                                            <h5 class="mt-3">No Products Found</h5>
+                                            <p>No items found in this order.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <!-- Pricing Summary -->
+                                <tr>
+                                    <td colspan="4" class="text-end fw-medium border-bottom-0">Sub Total:</td>
+                                    <td class="fw-medium border-bottom-0">Rs {{ transaction.TotalAmount|floatformat:2 }}</td>
+                                </tr>
+                                
+                                <!-- Shipping Cost -->
+                                <tr>
+                                    <td colspan="4" class="text-end fw-medium border-bottom-0">Shipping Cost:</td>
+                                    <td class="fw-medium border-bottom-0">Rs {{ shipping_cost|floatformat:2 }}</td>
+                                </tr>
+
+                                <!-- Grand Total -->
+                                <tr>
+                                    <td colspan="4" class="text-end fw-semibold fs-5">Grand Total:</td>
+                                    <td class="fw-semibold fs-5 text-primary">Rs {{ grand_total|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Payment Info -->
+                <div class="card-body p-6">
+                    <div class="row">
+                        <div class="col-md-6 mb-4 mb-lg-0">
+                            <h6>Payment Information</h6>
+                            <span class="badge bg-dark">{{ transaction.PaymentMethod|default:"Cash" }}</span>
+                            {% if transaction.Status == 'completed' %}
+                            <span class="ms-2 badge bg-success">Paid</span>
+                            {% else %}
+                            <span class="ms-2 badge bg-warning">Payment Pending</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6>Total Items</h6>
+                            <span class="fs-5">{{ total_items }} item{% if total_items != 1 %}s{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Debug Section (Remove in production) -->
+{% if debug %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5>Debug Information</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Order Items Count:</strong> {{ order_items|length }}</p>
+        <p><strong>Products Data:</strong> {{ transaction.Products|default:"Empty" }}</p>
+        {% for item in order_items %}
+        <hr>
+        <p><strong>Item {{ forloop.counter }}:</strong></p>
+        <ul>
+            <li>Product Name: {{ item.product_name }}</li>
+            <li>Has Product Object: {% if item.product %}Yes ({{ item.product.ProductName }}){% else %}No{% endif %}</li>
+            <li>Quantity: {{ item.quantity }}</li>
+            <li>Price: {{ item.price }}</li>
+            <li>Unit: {{ item.unit }}</li>
+        </ul>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

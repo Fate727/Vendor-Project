@@ -455,22 +455,13 @@
 	</div>
 </nav>
             <main class="main-content-wrapper">
-						
-				{% comment %} The public message area {% endcomment %}
-				 
-				{% if messages %}
-						  <div>
-						    {% for message in messages %}
-						      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-        						{{ message }}
-						      </div>
-						    {% endfor %}
-						  </div>
-						{% endif %}
 
 
                 {% block superadmin %}
-              
+               
+				{% include 'partials/messages.html' %}
+
+
                 {% endblock %}
             </main>
 			

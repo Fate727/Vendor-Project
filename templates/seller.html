@@ -304,9 +304,8 @@
 					<div id="navOrders" class="collapse " data-bs-parent="#sideNavbar">
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<a class="nav-link " href="{% url 'Order-index' %}">List</a>
+								<a class="nav-link " href="{% url 'order-seller' %}">List</a>
 							</li>
-							
 						</ul>
 					</div>
 				</li>
@@ -327,18 +326,8 @@
             <!-- main wrapper -->
             <main class="main-content-wrapper">
 
-					<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-					  {% if messages %}
-					    {% for message in messages %}
-					      <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg mb-2" 
-					           role="alert" style="min-width: 300px;">
-					        {{ message }}
-					        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-					      </div>
-					    {% endfor %}
-					  {% endif %}
-					</div>
-
+			{% include 'partials/messages.html' %}
+						
 			{% block sellermain %}
             {% endblock %}
             </main>
