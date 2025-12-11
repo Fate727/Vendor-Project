@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
+    
     path('', views.dashboard, name='seller-dashboard'),
     
     # Prodcut sections
@@ -28,7 +29,6 @@ urlpatterns = [
     path('order/<int:transaction_id>/update-status/<str:new_status>/', 
      views.update_order_status, 
      name='update-order-status'),
-    
     path('order-details/<int:transaction_id>/', views.order_detail_view, name='order-detail'),
 
     path('SellerLogout', views.logout_accout, name="LogoutSeller"),

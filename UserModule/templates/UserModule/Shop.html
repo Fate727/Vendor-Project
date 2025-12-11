@@ -51,7 +51,7 @@
 
                                     {% for cat in categories %}
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.category_id }}" id="cat{{ cat.category_id }}"
+                                        <input class="form-check-input category-checkbox" type="checkbox" name="categories" value="{{ cat.category_id }}" id="cat{{ cat.category_id }}"
                                                {% if cat.category_id|stringformat:"s" in selected_categories %}checked{% endif %}>
                                         <label class="form-check-label" for="cat{{ cat.category_id }}">
                                             {{ cat.name }}
@@ -60,6 +60,23 @@
                                     {% empty %}
                                     <p>No categories available.</p>
                                     {% endfor %}
+                               </div>
+                               
+                               <!-- Tags Filter -->
+                               <div class="mb-8">
+                                   <h5 class="mb-3">Tags</h5>
+                                   
+                                   {% for tag in all_tags %}
+                                   <div class="form-check mb-2">
+                                       <input class="form-check-input tag-checkbox" type="checkbox" name="tags" value="{{ tag.Name }}" id="tag{{ forloop.counter }}"
+                                              {% if tag.Name in selected_tags %}checked{% endif %}>
+                                       <label class="form-check-label" for="tag{{ forloop.counter }}">
+                                           {{ tag.Name }}
+                                       </label>
+                                   </div>
+                                   {% empty %}
+                                   <p>No tags available.</p>
+                                   {% endfor %}
                                </div>
                             
                                <!-- Submit Button -->
@@ -94,48 +111,90 @@
                         </div>
                     </div>
 
-                    <!-- list icon -->
-                    <div class="d-lg-flex justify-content-between align-items-center">
-                        <div class="mb-3 mb-lg-0">
-                            <p class="mb-0">
-                                <span class="text-dark">{{ products|length }}</span>
-                                Products found
-                            </p>
-                        </div>
-
-                        <!-- icon -->
-                        <div class="d-md-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="ms-2 d-lg-none">
-                                    <a class="btn btn-outline-gray-400 text-muted" data-bs-toggle="offcanvas" href="#offcanvasCategory" role="button" aria-controls="offcanvasCategory">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter me-2">
-                                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                                        </svg>
-                                        Filters
-                                    </a>
-                                </div>
+                 <!-- list icon -->
+                <div class="d-lg-flex justify-content-between align-items-center">
+                    <div class="mb-3 mb-lg-0">
+                        <p class="mb-0">
+                            <span class="text-dark">{{ products|length }}</span>
+                            Products found
+                        </p>
+                    </div>
+                
+                    <!-- icon -->
+                    <div class="d-md-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="ms-2 d-lg-none">
+                                <a class="btn btn-outline-gray-400 text-muted" data-bs-toggle="offcanvas" href="#offcanvasCategory" role="button" aria-controls="offcanvasCategory">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter me-2">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Filters
+                                </a>
                             </div>
-
-                            <div class="d-flex mt-2 mt-lg-0">
-                                <div class="me-2 flex-grow-1">
-                                    <select class="form-select">
-                                        <option selected>Show: 50</option>
-                                        <option value="10">10</option>
-                                        <option value="20">20</option>
-                                        <option value="30">30</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <select class="form-select">
-                                        <option selected>Sort by: Featured</option>
-                                        <option value="Low to High">Price: Low to High</option>
-                                        <option value="High to Low">Price: High to Low</option>
-                                        <option value="Release Date">Release Date</option>
-                                    </select>
-                                </div>
+                        </div>
+                    
+                        <div class="d-flex mt-2 mt-lg-0">
+                            <div class="me-2 flex-grow-1">
+                                <select class="form-select">
+                                    <option selected>Show: 50</option>
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="30">30</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select class="form-select">
+                                    <option selected>Sort by: Featured</option>
+                                    <option value="Low to High">Price: Low to High</option>
+                                    <option value="High to Low">Price: High to Low</option>
+                                    <option value="Release Date">Release Date</option>
+                                </select>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Tags section below -->
+                <div class="mt-3">
+                    <div class="d-flex flex-wrap align-items-center">
+                        {% if selected_tags %}
+                        <div class="me-3 mb-2">
+                            <strong>Selected Tags:</strong>
+                        </div>
+                        {% for tag in selected_tags %}
+                        <span class="badge bg-primary me-2 mb-2 p-2">
+                            {{ tag }}
+                            <a href="{% url 'Shop-index' %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                        </span>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Show filtered tags -->
+                        {% if not selected_tags and all_tags %}
+                        <div class="me-3 mb-2">
+                            <strong>
+                                {% if selected_categories %}
+                                Tags in selected categories:
+                                {% else %}
+                                All Tags:
+                                {% endif %}
+                            </strong>
+                        </div>
+                        {% for tag in all_tags %}
+                        <a href="{% url 'Shop-index' %}?tag={{ tag.Name|urlencode }}" class="badge bg-secondary me-2 mb-2 p-2 text-decoration-none">
+                            {{ tag.Name }}
+                        </a>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Show message if no tags available for selected categories -->
+                        {% if not all_tags and selected_categories %}
+                        <div class="text-muted">
+                            No tags available for selected categories.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
 
                     <!-- row -->
                     <div class="row g-4 row-cols-xl-4 row-cols-lg-3 row-cols-2 row-cols-md-2 mt-2">
@@ -168,6 +227,15 @@
                                     <h2 class="fs-6">
                                         <a href="#" class="text-inherit text-decoration-none">{{ product.ProductName }}</a>
                                     </h2>
+                                    
+                                    <!-- Display product tags -->
+                                    {% if product.SubCategories %}
+                                    <div class="mb-2">
+                                        {% for tag in product.SubCategories %}
+                                        <span class="badge bg-light text-dark border me-1 mb-1">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
 
                                     <div class="d-flex justify-content-between align-items-center mt-3">
                                         <div>
@@ -220,6 +288,7 @@
                         </div>
                     </div>
 
+                    
                 </section>
             </div>
         </div>
@@ -270,6 +339,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .catch(err => console.error(err));
+        });
+    });
+    
+    // Handle tag link clicks
+    document.querySelectorAll('a[href*="?tag="]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tag = this.getAttribute('href').split('?tag=')[1];
+            const tagCheckbox = document.querySelector(`input[value="${decodeURIComponent(tag)}"]`);
+            if (tagCheckbox) {
+                tagCheckbox.checked = true;
+                document.getElementById('filterForm').submit();
+            }
         });
     });
 });

@@ -13,8 +13,8 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item"><a href="{% url 'seller-dashboard' %}" class="text-inherit">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'products-index' %}" class="text-inherit">Products</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Add New Product</li>
+                            <li class="ms-2"><a href="{% url 'products-index' %}" class="text-inherit">Products</a></li>
+                            <li class="ms-2 active" aria-current="page">Add New Product</li>
                         </ol>
                     </nav>
                 </div>
@@ -29,33 +29,33 @@
         <div class="card mb-6 card-lg">
             <div class="card-body p-6">
                 <h4 class="mb-4 h5">Add Product Information</h4>
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data" id="product-form">
                     {% csrf_token %}
                     <div class="row">
 
                         <!-- Product Name -->
                         <div class="mb-3 col-lg-6">
-                            <label class="form-label">Product Name</label>
+                            <label class="form-label">Product Name <span class="text-danger">*</span></label>
                             <input type="text" name="product_name" class="form-control" placeholder="Product Name" required />
                         </div>
 
                         <!-- Company Name -->
                         <div class="mb-3 col-lg-6">
-                            <label class="form-label">Company Name</label>
-                            <input type="text" name="company_name" class="form-control" placeholder="Company Name" />
+                            <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                            <input type="text" name="company_name" class="form-control" placeholder="Company Name" required />
                         </div>
 
                         <!-- Stock -->
                         <div class="mb-3 col-lg-6">
-                            <label class="form-label">Stock</label>
-                            <input type="number" name="stock" class="form-control" placeholder="Stock Quantity" required />
+                            <label class="form-label">Stock <span class="text-danger">*</span></label>
+                            <input type="number" name="stock" class="form-control" placeholder="Stock Quantity" min="0" required />
                         </div>
 
                         <!-- Main Category -->
                         <div class="mb-3 col-lg-6">
-                            <label class="form-label">Product Main Category</label>
+                            <label class="form-label">Product Main Category <span class="text-danger">*</span></label>
                             <select name="category" class="form-select" required>
-                                <option selected disabled>Choose Category</option>
+                                <option value="" selected disabled>Choose Category</option>
                                 {% for cat in categories %}
                                     <option value="{{ cat.category_id }}">{{ cat.name }}</option>
                                 {% endfor %}
@@ -64,7 +64,7 @@
 
                         <!-- Sub Categories (dynamic) -->
                         <div class="mb-3 col-lg-12">
-                            <label class="form-label">Product Sub Categories</label>
+                            <label class="form-label">Product Sub Categories <span class="text-danger">*</span></label>
                             <div id="subcat-wrapper">
                                 <div class="subcat-item mb-2 row">
                                     <div class="col-10">
@@ -80,7 +80,7 @@
 
                          <!-- Units (dynamic) -->
                         <div class="mb-3">
-                            <label>Units</label>
+                            <label>Units <span class="text-danger">*</span></label>
                             <div id="units-wrapper">
                                 <div class="row mb-2 unit-item">
                                     <div class="col-4">
@@ -102,7 +102,7 @@
 
                         <!-- Specifications (dynamic) -->
                         <div class="mb-3 col-lg-12">
-                            <label class="form-label">Specifications</label>
+                            <label class="form-label">Specifications <span class="text-danger">*</span></label>
                             <div id="specs-wrapper">
                                 <div class="spec-item mb-2 row">
                                     <div class="col-5">
@@ -121,14 +121,14 @@
 
                         <!-- Product Images -->
                         <div class="mb-3 col-lg-12 mt-5">
-                            <h4 class="mb-3 h5">Product Images</h4>
-                            <input type="file" name="images" class="form-control" multiple required />
+                            <h4 class="mb-3 h5">Product Images <span class="text-danger">*</span></h4>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*" required />
                         </div>
 
                         <!-- Product Description -->
                         <div class="mb-3 col-lg-12 mt-5">
-                            <h4 class="mb-3 h5">Product Description</h4>
-                            <textarea name="description" id="editor" class="form-control" rows="5" placeholder="Product Description"></textarea>
+                            <h4 class="mb-3 h5">Product Description <span class="text-danger">*</span></h4>
+                            <textarea name="description" id="editor" class="form-control" rows="5" placeholder="Product Description" required></textarea>
                         </div>
 
                         <div class="col-12 mt-4">
@@ -176,7 +176,7 @@
         wrapper.appendChild(newSub);
     });
     
-        // Add/Remove Units
+    // Add/Remove Units
     document.getElementById('add-unit').addEventListener('click', function(){
         let wrapper = document.getElementById('units-wrapper');
         let newUnit = document.createElement('div');
@@ -207,6 +207,33 @@
         }
         if(e.target.classList.contains('remove-unit')){
             e.target.closest('.unit-item').remove();
+        }
+    });
+
+    // Form validation to ensure at least one sub-category, unit, and spec exists
+    document.getElementById('product-form').addEventListener('submit', function(e) {
+        // Check if there's at least one sub-category
+        const subCategories = document.querySelectorAll('input[name="sub_category[]"]');
+        if (subCategories.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one sub-category.');
+            return;
+        }
+        
+        // Check if there's at least one unit
+        const units = document.querySelectorAll('input[name="unit_name[]"]');
+        if (units.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one unit.');
+            return;
+        }
+        
+        // Check if there's at least one specification
+        const specs = document.querySelectorAll('input[name="spec_name[]"]');
+        if (specs.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one specification.');
+            return;
         }
     });
 </script>

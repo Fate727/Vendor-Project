@@ -11,10 +11,9 @@ import json
 from UserModule.models import Transaction, Users
 from django.db.models import Q
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.db.models import Sum, Count
-from decorators import login_required,seller_required
-
+from decorators import login_required, seller_required
 
 @seller_required
 @login_required
@@ -50,19 +49,145 @@ def dashboard(request):
     monthly_orders = monthly_transactions.count()
     monthly_customers = monthly_transactions.values('UserID').distinct().count()
     
+    # Get sales data for the last 7 days for the chart
+    last_7_days = today - timedelta(days=6)
+    daily_sales = {}
+    
+    # Initialize all 7 days with empty data
+    for i in range(7):
+        date = (today - timedelta(days=i)).date()
+        daily_sales[date.isoformat()] = {
+            'total': 0,
+            'breakdown': []
+        }
+    
+    # Fill with actual data from transactions
+    daily_transactions = monthly_transactions.filter(
+        CreatedAt__gte=last_7_days
+    ).order_by('CreatedAt')
+    
+    # Process each transaction for the chart data
+    for transaction in daily_transactions:
+        date_str = transaction.CreatedAt.date().isoformat()
+        if date_str in daily_sales:
+            # Add transaction total
+            daily_sales[date_str]['total'] += float(transaction.TotalAmount)
+            
+            # Add product breakdown from Products JSON field
+            # Structure: [{"unit": "piece-3", "quantity": 1, "subtotal": 1899.0, "product_id": 1, "unit_price": 1899.0, "product_name": "Men's Cotton T-Shirt"}]
+            if transaction.Products and isinstance(transaction.Products, list):
+                for product_item in transaction.Products:
+                    if isinstance(product_item, dict):
+                        # Get product details
+                        product_name = product_item.get('product_name', 'Product')
+                        quantity = product_item.get('quantity', 1)
+                        unit_price = product_item.get('unit_price')
+                        
+                        # Truncate long product names
+                        if len(product_name) > 20:
+                            product_name = product_name[:20] + "..."
+                        
+                        if unit_price is not None:
+                            try:
+                                unit_price_float = float(unit_price)
+                                # Add product info for each quantity
+                                for _ in range(int(quantity)):
+                                    # Store as object with name and price
+                                    daily_sales[date_str]['breakdown'].append({
+                                        'name': product_name,
+                                        'price': unit_price_float
+                                    })
+                            except (ValueError, TypeError):
+                                # Fallback
+                                daily_sales[date_str]['breakdown'].append({
+                                    'name': 'Product',
+                                    'price': float(transaction.TotalAmount)
+                                })
+                        else:
+                            # No unit_price, use transaction total
+                            daily_sales[date_str]['breakdown'].append({
+                                'name': product_name,
+                                'price': float(transaction.TotalAmount)
+                            })
+                    else:
+                        # Not a dict
+                        daily_sales[date_str]['breakdown'].append({
+                            'name': 'Product',
+                            'price': float(transaction.TotalAmount)
+                        })
+            else:
+                # No product data
+                daily_sales[date_str]['breakdown'].append({
+                    'name': 'Product',
+                    'price': float(transaction.TotalAmount)
+                })
+    
+    # Prepare chart data - ONLY days with sales
+    sorted_dates = sorted(daily_sales.keys(), reverse=True)  # Most recent first
+    daily_totals = []
+    daily_breakdown = {}
+    date_labels = []
+    filtered_dates = []
+    
+    # Filter only days with sales
+    for i, date_str in enumerate(sorted_dates):
+        sales_data = daily_sales[date_str]
+        if sales_data['total'] > 0:  # Only include days with sales
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            # Format as "Dec-10", "Dec-09", etc.
+            date_labels.append(date_obj.strftime('%b-%d'))  # Format: Dec-10
+            
+            daily_totals.append(round(sales_data['total'], 2))
+            # Store the breakdown objects as-is (they already contain name and price)
+            daily_breakdown[str(len(filtered_dates))] = sales_data['breakdown']
+            filtered_dates.append(date_str)
+    
+    # Check if we have any real sales data
+    has_sales_data = len(daily_totals) > 0
+    
+    # If no sales data, create empty arrays for the chart
+    if not has_sales_data:
+        # Get last 7 days for the static chart labels
+        for i in range(7):
+            date = (today - timedelta(days=i)).date()
+            date_labels.append(date.strftime('%b-%d'))
+        
+        daily_totals = [0] * 7
+        daily_breakdown = {str(i): [] for i in range(7)}
+    
+    # Convert to JSON-serializable format
+    sales_chart_data = {
+        'daily_totals': daily_totals,
+        'daily_breakdown': daily_breakdown,
+        'date_labels': date_labels,
+        'has_sales_data': has_sales_data,
+        'total_last_7_days': sum(daily_totals)
+    }
+    
+    # Convert to JSON string
+    sales_chart_data_json = json.dumps(sales_chart_data)
+    
     # Recent transactions for table
     recent_transactions = transactions.order_by('-CreatedAt')[:10]
     recent_orders = []
     for transaction in recent_transactions:
-        product_name = "Multiple Products"
+        product_name = "Product"
         if transaction.Products and len(transaction.Products) > 0:
             first_product = transaction.Products[0]
             if isinstance(first_product, dict):
-                try:
-                    product = Product.objects.get(pk=first_product.get('product'))
-                    product_name = product.ProductName[:30] + "..." if len(product.ProductName) > 30 else product.ProductName
-                except:
-                    product_name = "Product"
+                # Try to get product_name directly from the Products JSON
+                product_name = first_product.get('product_name', 'Product')
+                if len(product_name) > 30:
+                    product_name = product_name[:30] + "..."
+                else:
+                    # Try to get from Product model
+                    try:
+                        product_id = first_product.get('product_id')
+                        if product_id:
+                            product = Product.objects.get(pk=product_id)
+                            product_name = product.ProductName[:30] + "..." if len(product.ProductName) > 30 else product.ProductName
+                    except:
+                        pass
         
         recent_orders.append({
             'order_number': f"#TR{str(transaction.TransactionID).zfill(6)}",
@@ -108,6 +233,8 @@ def dashboard(request):
         'pending_percentage': pending_percentage,
         'cancelled_percentage': cancelled_percentage,
         'current_year': today.year,
+        # Add sales data as JSON string
+        'sales_chart_data_json': sales_chart_data_json,
     }
     
     return render(request, 'SellerModule/dashboard.html', context)
@@ -128,6 +255,8 @@ def normalize_images(product):
         product.Images = []
 
 # Product Section view
+@seller_required
+@login_required
 def productSection(request):
     user_id = request.session.get('uid')
     if not user_id:
@@ -166,6 +295,7 @@ def productSection(request):
     return render(request, 'SellerModule/ProductSection.html', context)
 
 # AJAX Products view
+
 def ajax_products(request):
     user_id = request.session.get('uid')
     if not user_id:
@@ -207,6 +337,8 @@ def ajax_products(request):
 
     return JsonResponse({'html': rows_html, 'pagination': pagination_html})
 
+@seller_required
+@login_required
 def categorySection(request):
     # Fetch all categories
     categories = Category.objects.all().order_by('-category_id')
@@ -261,6 +393,8 @@ def ajax_categories(request):
 
     return JsonResponse({'html': rows_html, 'pagination': pagination_html})
 
+@seller_required
+@login_required
 def AddProduct(request):
     categories = Category.objects.filter(status="active")
 
@@ -354,7 +488,8 @@ def DeleteProductImage(request, product_id, image_index):
 
     return redirect('edit-product', product_id=product_id)
 
-
+@seller_required
+@login_required
 def edit_product(request, product_id):
     user_id = request.session.get('uid')
     if not user_id:
@@ -440,6 +575,8 @@ def edit_product(request, product_id):
     }
     return render(request, 'SellerModule/EditProduct.html', context)
 
+@seller_required
+@login_required
 def delete_product(request, product_id):
     user_id = request.session.get('uid')
     if not user_id:
@@ -458,7 +595,8 @@ def delete_product(request, product_id):
     messages.success(request, "Product deleted successfully.")
     return redirect('products-index')
 
-
+@seller_required
+@login_required
 def AddCategory(request):
     if request.method == 'POST':
         category_name = request.POST.get('category_name', '').strip()
@@ -503,7 +641,8 @@ def AddCategory(request):
 
     return render(request, 'SellerModule/AddCategory.html')
 
-
+@seller_required
+@login_required
 def EditCategory(request, category_id):
     category = get_object_or_404(Category, category_id=category_id)
 
@@ -552,7 +691,8 @@ def EditCategory(request, category_id):
 
     return render(request, 'SellerModule/EditCategory.html', {'category': category})
 
-
+@seller_required
+@login_required
 def DeleteCategory(request, category_id):
     category = get_object_or_404(Category, category_id=category_id)
 
@@ -573,6 +713,8 @@ def DeleteCategory(request, category_id):
 
 
 # Order Section
+@seller_required
+@login_required
 def Order(request):
     user_id = request.session.get('uid')
     if not user_id:
@@ -660,6 +802,8 @@ def Order(request):
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('/')
     
+@seller_required
+@login_required
 def update_order_status(request, transaction_id, new_status=None):
 
     user_id = request.session.get('uid')
@@ -712,8 +856,8 @@ def update_order_status(request, transaction_id, new_status=None):
         messages.error(request, f"An error occurred: {str(e)}")
         return redirect('order-seller')
     
-
 @login_required
+@seller_required
 def order_detail_view(request, transaction_id):
     # Check if user is logged in
     user_id = request.session.get('uid')

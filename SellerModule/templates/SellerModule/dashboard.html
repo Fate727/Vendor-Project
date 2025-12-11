@@ -114,6 +114,37 @@
                     <!-- chart -->
                     <div id="revenueChart" class="mt-6"></div>
 
+                    <!-- Embed sales data in a script tag - THIS IS THE KEY -->
+                    <script type="application/json" id="salesChartData">
+                        {{ sales_chart_data_json|safe }}
+                    </script>
+                    
+                        <!-- TEMPORARY DEBUG - REMOVE AFTER TESTING -->
+                        <div style="display: none;" id="debugInfo">
+                            <h4>Debug Information</h4>
+                            <p>sales_chart_data_json exists: {{ sales_chart_data_json|yesno:"Yes,No" }}</p>
+                            <p>Length: {{ sales_chart_data_json|length }}</p>
+                            <pre id="debugJson">{{ sales_chart_data_json|default:"No data" }}</pre>
+                        </div>
+
+<script>
+    // Debug script
+    console.log("=== TEMPLATE DEBUG ===");
+    console.log("sales_chart_data_json in template:", "{{ sales_chart_data_json }}");
+    
+    // Check if the variable exists
+    const debugJson = document.getElementById('debugJson').textContent;
+    console.log("Raw JSON from template:", debugJson);
+    
+    if (debugJson && debugJson !== "No data") {
+        try {
+            const parsed = JSON.parse(debugJson);
+            console.log("Successfully parsed JSON:", parsed);
+        } catch (e) {
+            console.error("JSON parse error:", e.message);
+        }
+    }
+</script>
                 </div>
             </div>
         </div>

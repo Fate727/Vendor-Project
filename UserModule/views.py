@@ -5,12 +5,13 @@ from SellerModule.models import Seller
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
-from SellerModule.models import Product, Category
+from SellerModule.models import Product, Category, Tag
 from django.http import JsonResponse
 import json
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.db import models
 
 from decorators import role_based_redirect
 
@@ -27,12 +28,17 @@ def index(request):
 def Shop(request):
     categories = Category.objects.all()
     products = Product.objects.all()
+    
+    # Get all tags from Tag model
+    all_tags = Tag.objects.all()
 
     selected_categories = []
+    selected_tags = []
     search_query = ""
 
     if request.method == "POST":
         selected_categories = request.POST.getlist("categories")
+        selected_tags = request.POST.getlist("tags")
         search_query = request.POST.get("search", "").strip()
 
         # --------------------------
@@ -45,19 +51,66 @@ def Shop(request):
             products = products.filter(Category__in=selected_categories_int)
 
         # --------------------------
+        # Tags Filter
+        # --------------------------
+        if selected_tags:
+            # Filter products where SubCategories contains any of the selected tags
+            tag_filters = []
+            for tag in selected_tags:
+                tag_filters.append(models.Q(SubCategories__contains=[tag]))
+            
+            # Combine all tag filters with OR condition
+            from django.db.models import Q
+            combined_tag_filter = Q()
+            for tag_filter in tag_filters:
+                combined_tag_filter |= tag_filter
+            
+            products = products.filter(combined_tag_filter)
+
+        # --------------------------
         # Search Filter (Product Name)
         # --------------------------
         if search_query:
             products = products.filter(ProductName__icontains=search_query)
+    
+    # Handle GET request with tag parameter (for tag links)
+    elif request.method == "GET" and 'tag' in request.GET:
+        tag = request.GET.get('tag')
+        selected_tags = [tag]
+        # Filter products where SubCategories contains the tag
+        products = products.filter(SubCategories__contains=[tag])
+    
+    # --------------------------
+    # Filter tags based on selected categories
+    # --------------------------
+    filtered_tags = all_tags
+    
+    # If categories are selected, filter tags to show only tags from those categories
+    if selected_categories:
+        selected_categories_int = [
+            int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
+        ]
+        filtered_tags = all_tags.filter(CategoryID__in=selected_categories_int)
+    
+    # If no categories selected but we have selected tags from GET request,
+    # find the categories for those tags
+    elif request.method == "GET" and 'tag' in request.GET and not selected_categories:
+        tag = request.GET.get('tag')
+        # Get the tag object to find its category
+        tag_obj = Tag.objects.filter(Name=tag).first()
+        if tag_obj:
+            # Filter tags to show only tags from this tag's category
+            filtered_tags = all_tags.filter(CategoryID=tag_obj.CategoryID)
 
     context = {
         "categories": categories,
         "products": products,
+        "all_tags": filtered_tags,  # Use filtered tags instead of all tags
         "selected_categories": selected_categories,
+        "selected_tags": selected_tags,
         "search_query": search_query,
     }
     return render(request, "UserModule/Shop.html", context)
-
 
 def product_quick_view(request, product_id):
     try:
