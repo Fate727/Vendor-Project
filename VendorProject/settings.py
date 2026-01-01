@@ -25,7 +25,7 @@ UTILS_PATH = BASE_DIR / 'utils'  # Change this line
 # Check if utils directory exists and add to Python path
 if UTILS_PATH.exists():
     sys.path.insert(0, str(UTILS_PATH))
-    print(f"✓ Added utils to Python path: {UTILS_PATH}")  # Optional debug
+    print(f"Added utils to Python path: {UTILS_PATH}") 
 else:
     print(f"✗ Utils not found at: {UTILS_PATH}")  # Optional debug
 # ===============================================

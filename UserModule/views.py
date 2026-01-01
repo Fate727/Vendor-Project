@@ -3,7 +3,7 @@ from decimal import Decimal
 from .models import Users, Cart, Transaction
 from SellerModule.models import Seller 
 from django.contrib import messages
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from SellerModule.models import Product, Category, Tag
 from django.http import JsonResponse
@@ -14,7 +14,6 @@ from django.db import transaction
 from django.db import models
 import re
 from django.db.models import Q
-from django.contrib.auth.hashers import make_password
 from decorators import role_based_redirect, login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -668,6 +667,8 @@ def AccountSetting(request):
             fullname = request.POST.get('fullname', '').strip()
             email = request.POST.get('email', '').strip()
             phone = request.POST.get('phone', '').strip()
+            username = request.POST.get('username', '').strip()
+            address = request.POST.get('address', '').strip()
             
             # Validation
             is_valid = True
@@ -675,6 +676,14 @@ def AccountSetting(request):
             # Validate Full Name
             if not fullname or len(fullname) > 100:
                 messages.error(request, "Please enter a valid full name (max 100 characters)")
+                is_valid = False
+                
+            # Validate User Name
+            if not username or len(username) > 50:
+                messages.error(request, "Please enter a valid username (max 50 characters)")
+                is_valid = False
+            elif Users.objects.filter(UserName=username).exclude(UserID=session_uid).exists():
+                messages.error(request, "Username already taken by another account")
                 is_valid = False
             
             # Validate Email
@@ -691,11 +700,18 @@ def AccountSetting(request):
                 messages.error(request, "Please enter a valid phone number (max 15 digits)")
                 is_valid = False
             
+            # Validate Address
+            if not address or len(address) > 255:
+                messages.error(request, "Please enter a valid address (max 255 characters)")
+                is_valid = False
+                
             if is_valid:
                 try:
                     user.FullName = fullname
                     user.Email = email
                     user.Phone = phone
+                    user.Address = address
+                    user.UserName = username
                     user.save()
                     messages.success(request, "Profile updated successfully!")
                 except Exception as e:
@@ -734,7 +750,7 @@ def AccountSetting(request):
                 except Exception as e:
                     messages.error(request, f"Error changing password: {str(e)}")
 
-    # 3️⃣ Pass user details to template
+    # Pass user details to template
     context = {
         "user": user
     }
