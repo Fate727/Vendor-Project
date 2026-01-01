@@ -83,6 +83,8 @@ class Product(models.Model):
                         CategoryID=self.Category
                     )
 
+
+
 class Tag(models.Model):
     TagID = models.AutoField(primary_key=True)
     CategoryID = models.ForeignKey(

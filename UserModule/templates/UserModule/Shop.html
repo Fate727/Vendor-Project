@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% load static %}
 
 {% block title %}Shop Page{% endblock %}
@@ -30,10 +29,8 @@
         <div class="container">
             <div class="row gx-10">
                 <aside class="col-lg-3 col-md-4 mb-6 mb-md-0">
-                   <form method="POST" id="filterForm">
-                       {% csrf_token %}
+                   <form method="GET" id="filterForm">
                        <div class="offcanvas offcanvas-start offcanvas-collapse w-md-50" tabindex="-1" id="offcanvasCategory" aria-labelledby="offcanvasCategoryLabel">
-                      
                            <!-- Offcanvas header for mobile -->
                            <div class="offcanvas-header d-lg-none">
                                <h5 class="offcanvas-title" id="offcanvasCategoryLabel">Filter</h5>
@@ -42,11 +39,9 @@
                          
                            <!-- Offcanvas body -->
                            <div class="offcanvas-body ps-lg-2 pt-lg-0">
-                         
                                <!-- Categories Filter -->
                                <div class="mb-8">
                                    <h5 class="mb-3">Categories</h5>
-                               
                                    <input type="search" class="form-control mb-3" placeholder="Search ..." id="Search" name="search" value="{{ search_query }}"/>
 
                                     {% for cat in categories %}
@@ -82,6 +77,10 @@
                                <!-- Submit Button -->
                                <button type="submit" class="btn btn-dark w-100 mb-4">Apply Filters</button>
                             
+                               <!-- Hidden fields for sort and show -->
+                               <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                               <input type="hidden" name="show" value="{{ show_per_page }}">
+                            
                                <!-- Banner -->
                                <div class="position-relative">
                                    <div class="position-absolute p-5 py-8">
@@ -96,11 +95,9 @@
                                    <img src="{% static 'assets/images/banner/assortment-citrus-fruits.png' %}"
                                         alt="" class="img-fluid rounded" />
                                </div>
-                            
                            </div>
                        </div>
                    </form>
-
                 </aside>
 
                 <section class="col-lg-9 col-md-12">
@@ -115,7 +112,7 @@
                 <div class="d-lg-flex justify-content-between align-items-center">
                     <div class="mb-3 mb-lg-0">
                         <p class="mb-0">
-                            <span class="text-dark">{{ products|length }}</span>
+                            <span class="text-dark">{{ total_products }}</span>
                             Products found
                         </p>
                     </div>
@@ -125,29 +122,31 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="ms-2 d-lg-none">
                                 <a class="btn btn-outline-gray-400 text-muted" data-bs-toggle="offcanvas" href="#offcanvasCategory" role="button" aria-controls="offcanvasCategory">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter me-2">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                    </svg>
-                    Filters
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter me-2">
+                                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                    </svg>
+                                    Filters
                                 </a>
                             </div>
                         </div>
                     
                         <div class="d-flex mt-2 mt-lg-0">
                             <div class="me-2 flex-grow-1">
-                                <select class="form-select">
-                                    <option selected>Show: 50</option>
-                                    <option value="10">10</option>
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
+                                <select class="form-select" id="showSelect" name="show">
+                                    <option value="4" {% if show_per_page == 4 %}selected{% endif %}>Show: 4</option>
+                                    <option value="6" {% if show_per_page == 6 %}selected{% endif %}>Show: 6</option>
+                                    <option value="8" {% if show_per_page == 8 %}selected{% endif %}>Show: 8</option>
+                                    <option value="12" {% if show_per_page == 12 %}selected{% endif %}>Show: 12</option>
+                                    <option value="24" {% if show_per_page == 24 %}selected{% endif %}>Show: 24</option>
                                 </select>
                             </div>
                             <div>
-                                <select class="form-select">
-                                    <option selected>Sort by: Featured</option>
-                                    <option value="Low to High">Price: Low to High</option>
-                                    <option value="High to Low">Price: High to Low</option>
-                                    <option value="Release Date">Release Date</option>
+                                <select class="form-select" id="sortSelect" name="sort_by">
+                                    <option value="featured" {% if sort_by == 'featured' %}selected{% endif %}>Sort by: Featured</option>
+                                    <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                                    <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                                    <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
                                 </select>
                             </div>
                         </div>
@@ -164,7 +163,7 @@
                         {% for tag in selected_tags %}
                         <span class="badge bg-primary me-2 mb-2 p-2">
                             {{ tag }}
-                            <a href="{% url 'Shop-index' %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+                            <a href="{% url 'Shop-index' %}" class="text-white ms-1 remove-tag" style="text-decoration: none;">×</a>
                         </span>
                         {% endfor %}
                         {% endif %}
@@ -197,6 +196,7 @@
                 </div>
 
                     <!-- row -->
+                    {% if products %}
                     <div class="row g-4 row-cols-xl-4 row-cols-lg-3 row-cols-2 row-cols-md-2 mt-2">
                         {% for product in products %}
                         <div class="col">
@@ -260,35 +260,62 @@
                                 </div>
                             </div>
                         </div>
-                        {% empty %}
-                        <p class="text-center py-4">No products available.</p>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <h3 class="mt-3">No products found</h3>
+                        <p class="text-muted">Try changing your filters or search term</p>
+                    </div>
+                    {% endif %}
 
+                    <!-- Pagination -->
+                    {% if total_pages > 1 %}
                     <div class="row mt-8">
                         <div class="col">
                             <nav>
-                                <ul class="pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if products.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link mx-1" href="?page={{ products.previous_page_number }}&sort_by={{ sort_by }}&show={{ show_per_page }}{% for cat in selected_categories %}&categories={{ cat }}{% endfor %}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                                            <i class="feather-icon icon-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    {% else %}
                                     <li class="page-item disabled">
                                         <a class="page-link mx-1" href="#" aria-label="Previous">
                                             <i class="feather-icon icon-chevron-left"></i>
                                         </a>
                                     </li>
-                                    <li class="page-item"><a class="page-link mx-1 active" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link mx-1" href="#">2</a></li>
-                                    <li class="page-item"><a class="page-link mx-1" href="#">...</a></li>
-                                    <li class="page-item"><a class="page-link mx-1" href="#">12</a></li>
+                                    {% endif %}
+
+                                    {% for i in products.paginator.page_range %}
+                                        {% if products.number == i %}
+                                        <li class="page-item active"><a class="page-link mx-1" href="#">{{ i }}</a></li>
+                                        {% elif i > products.number|add:'-3' and i < products.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link mx-1" href="?page={{ i }}&sort_by={{ sort_by }}&show={{ show_per_page }}{% for cat in selected_categories %}&categories={{ cat }}{% endfor %}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if products.has_next %}
                                     <li class="page-item">
+                                        <a class="page-link mx-1" href="?page={{ products.next_page_number }}&sort_by={{ sort_by }}&show={{ show_per_page }}{% for cat in selected_categories %}&categories={{ cat }}{% endfor %}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                                            <i class="feather-icon icon-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
                                         <a class="page-link mx-1" href="#" aria-label="Next">
                                             <i class="feather-icon icon-chevron-right"></i>
                                         </a>
                                     </li>
+                                    {% endif %}
                                 </ul>
                             </nav>
                         </div>
                     </div>
-
-                    
+                    {% endif %}
                 </section>
             </div>
         </div>
@@ -299,17 +326,17 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    // Add to cart functionality
     document.querySelectorAll(".add-to-cart-btn").forEach(button => {
         button.addEventListener("click", function () {
-            const productDiv = this.closest("div"); // parent div containing hidden inputs
+            const productDiv = this.closest("div");
             const productId = this.dataset.productId;
 
             const unit = productDiv.querySelector(".selected-unit-unit").value;
             const amount = productDiv.querySelector(".selected-unit-amount").value;
             const price = productDiv.querySelector(".selected-unit-price").value;
             
-
-            const quantity = 1; // or get from input if you have a quantity input field
+            const quantity = 1;
 
             const selectedUnit = {
                 unit: unit,
@@ -331,11 +358,11 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then(data => {
                 if (data.redirect) {
-                    window.location.href = data.redirect; // redirect to login
+                    window.location.href = data.redirect;
                 } else if (data.message) {
-                    alert(data.message); // simple feedback
+                    showToast(data.message, 'success');
                 } else if (data.error) {
-                    console.error(data.error);
+                    showToast(data.error, 'error');
                 }
             })
             .catch(err => console.error(err));
@@ -354,6 +381,100 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+    
+    // Handle remove tag
+    document.querySelectorAll('.remove-tag').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tag = this.parentElement.textContent.trim().slice(0, -1); // Remove ×
+            const form = document.getElementById('filterForm');
+            
+            // Remove this tag from selected tags
+            const tagInputs = form.querySelectorAll('input[name="tags"]');
+            tagInputs.forEach(input => {
+                if (input.value === tag) {
+                    input.checked = false;
+                }
+            });
+            
+            form.submit();
+        });
+    });
+    
+    // Handle show per page change
+    const showSelect = document.getElementById('showSelect');
+    if (showSelect) {
+        showSelect.addEventListener('change', function() {
+            const form = document.getElementById('filterForm');
+            form.querySelector('input[name="show"]').value = this.value;
+            form.submit();
+        });
+    }
+    
+    // Handle sort by change
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const form = document.getElementById('filterForm');
+            form.querySelector('input[name="sort_by"]').value = this.value;
+            form.submit();
+        });
+    }
+    
+    // Quick view modal
+    document.querySelectorAll('.quick-view-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            // Load product details via AJAX for quick view
+            fetch(`/quick-view/${productId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update modal content with product data
+                    // You need to implement this based on your quick view modal structure
+                })
+                .catch(err => console.error(err));
+        });
+    });
 });
+
+function showToast(message, type = 'info') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type === 'error' ? 'danger' : type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    // Add to toast container
+    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+    toastContainer.appendChild(toast);
+    
+    // Initialize and show toast
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Remove toast after it hides
+    toast.addEventListener('hidden.bs.toast', function () {
+        toast.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '1060';
+    document.body.appendChild(container);
+    return container;
+}
 </script>
 {% endblock %}

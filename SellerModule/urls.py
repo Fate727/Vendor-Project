@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     
     path('', views.dashboard, name='seller-dashboard'),
+    path('profile-setting/', views.seller_profile,name="profile-seller"),
     
     # Prodcut sections
     path('products', views.productSection, name='products-index'),

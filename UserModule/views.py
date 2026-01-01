@@ -12,8 +12,11 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.db import models
-
-from decorators import role_based_redirect
+import re
+from django.db.models import Q
+from django.contrib.auth.hashers import make_password
+from decorators import role_based_redirect, login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @role_based_redirect
 def index(request):
@@ -25,6 +28,7 @@ def index(request):
     })
 
 
+@role_based_redirect
 def Shop(request):
     categories = Category.objects.all()
     products = Product.objects.all()
@@ -35,83 +39,118 @@ def Shop(request):
     selected_categories = []
     selected_tags = []
     search_query = ""
+    sort_by = request.GET.get('sort_by', 'featured')
+    show_per_page = int(request.GET.get('show', 12))
+    page = request.GET.get('page', 1)
 
+    # Handle filters
     if request.method == "POST":
         selected_categories = request.POST.getlist("categories")
         selected_tags = request.POST.getlist("tags")
         search_query = request.POST.get("search", "").strip()
-
-        # --------------------------
-        # Category Filter
-        # --------------------------
-        if selected_categories:
-            selected_categories_int = [
-                int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
-            ]
-            products = products.filter(Category__in=selected_categories_int)
-
-        # --------------------------
-        # Tags Filter
-        # --------------------------
-        if selected_tags:
-            # Filter products where SubCategories contains any of the selected tags
-            tag_filters = []
-            for tag in selected_tags:
-                tag_filters.append(models.Q(SubCategories__contains=[tag]))
-            
-            # Combine all tag filters with OR condition
-            from django.db.models import Q
-            combined_tag_filter = Q()
-            for tag_filter in tag_filters:
-                combined_tag_filter |= tag_filter
-            
-            products = products.filter(combined_tag_filter)
-
-        # --------------------------
-        # Search Filter (Product Name)
-        # --------------------------
-        if search_query:
-            products = products.filter(ProductName__icontains=search_query)
     
-    # Handle GET request with tag parameter (for tag links)
-    elif request.method == "GET" and 'tag' in request.GET:
-        tag = request.GET.get('tag')
-        selected_tags = [tag]
-        # Filter products where SubCategories contains the tag
-        products = products.filter(SubCategories__contains=[tag])
+    elif request.method == "GET":
+        selected_categories = request.GET.getlist('categories')
+        selected_tags = request.GET.getlist('tags')
+        search_query = request.GET.get('search', '').strip()
+        
+        # Handle single tag from URL parameter
+        if 'tag' in request.GET and not selected_tags:
+            tag = request.GET.get('tag')
+            selected_tags = [tag]
+
+    # Apply filters
+    if selected_categories:
+        selected_categories_int = [
+            int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
+        ]
+        products = products.filter(Category__in=selected_categories_int)
+
+    if selected_tags:
+        tag_filters = Q()
+        for tag in selected_tags:
+            tag_filters |= Q(SubCategories__contains=[tag])
+        products = products.filter(tag_filters)
+
+    if search_query:
+        products = products.filter(ProductName__icontains=search_query)
     
-    # --------------------------
+    # Apply Sorting
+    # Note: For JSON field sorting, we need to annotate first
+    # For now, we'll use list sorting for price sorting
+    # For date sorting, we can use database sorting
+    
+    if sort_by == 'newest':
+        products = products.order_by('-CreatedAt')
+    elif sort_by == 'oldest':
+        products = products.order_by('CreatedAt')
+    else:
+        # For price sorting, we need to convert to list
+        products_list = list(products)
+        
+        def get_min_price(units):
+            if units and isinstance(units, list) and len(units) > 0:
+                try:
+                    if isinstance(units, str):
+                        units = json.loads(units)
+                    return min([float(unit.get('price', 0)) for unit in units])
+                except:
+                    return 0
+            return 0
+        
+        if sort_by == 'price_low':
+            products_list.sort(key=lambda p: get_min_price(p.Units))
+        elif sort_by == 'price_high':
+            products_list.sort(key=lambda p: get_min_price(p.Units), reverse=True)
+        
+        products = products_list  # Use sorted list
+    
     # Filter tags based on selected categories
-    # --------------------------
     filtered_tags = all_tags
     
-    # If categories are selected, filter tags to show only tags from those categories
     if selected_categories:
         selected_categories_int = [
             int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
         ]
         filtered_tags = all_tags.filter(CategoryID__in=selected_categories_int)
     
-    # If no categories selected but we have selected tags from GET request,
-    # find the categories for those tags
     elif request.method == "GET" and 'tag' in request.GET and not selected_categories:
         tag = request.GET.get('tag')
-        # Get the tag object to find its category
         tag_obj = Tag.objects.filter(Name=tag).first()
         if tag_obj:
-            # Filter tags to show only tags from this tag's category
             filtered_tags = all_tags.filter(CategoryID=tag_obj.CategoryID)
+
+    # Pagination
+    # Check if products is a list or queryset
+    if isinstance(products, list):
+        paginator = Paginator(products, show_per_page)
+    else:
+        paginator = Paginator(products, show_per_page)
+    
+    try:
+        products_page = paginator.page(page)
+    except PageNotAnInteger:
+        products_page = paginator.page(1)
+    except EmptyPage:
+        products_page = paginator.page(paginator.num_pages)
 
     context = {
         "categories": categories,
-        "products": products,
-        "all_tags": filtered_tags,  # Use filtered tags instead of all tags
+        "products": products_page,
+        "all_tags": filtered_tags,
         "selected_categories": selected_categories,
         "selected_tags": selected_tags,
         "search_query": search_query,
+        "sort_by": sort_by,
+        "show_per_page": show_per_page,
+        "current_page": products_page.number,
+        "total_pages": paginator.num_pages,
+        "total_products": paginator.count,
     }
     return render(request, "UserModule/Shop.html", context)
 
+
+@role_based_redirect
 def product_quick_view(request, product_id):
     try:
         product = get_object_or_404(Product, ProductID=product_id)
@@ -139,16 +178,15 @@ def product_quick_view(request, product_id):
         print("Quick View Error:", e)
         return JsonResponse({"error": str(e)}, status=500)
 
-
+@role_based_redirect
 def Store(request):
-    sellers = Seller.objects.all()[:9]  # limit to 9 sellers
+    sellers = Seller.objects.filter(Status = "accepted")[:9]
     seller_data = []
 
     for seller in sellers:
-        # Get up to 3 products for this seller
         products = Product.objects.filter(SellerID=seller)[:3]
 
-        # Collect subcategories from these products
+
         subcategories = []
         for prod in products:
             for sub in prod.SubCategories:
@@ -170,8 +208,8 @@ def Store(request):
         'seller_data': seller_data,
         'total_sellers': total_sellers
     })
-    
-    
+
+@role_based_redirect    
 def SignIn(request):
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
@@ -198,7 +236,7 @@ def SignIn(request):
             # Redirect based on role
             role_lower = user.Role.lower()
             if role_lower == "admin":
-                return redirect("superadmin_dashboard")
+                return redirect("superadmin-dashboard")
             elif role_lower == "seller":
                 return redirect("seller-dashboard")
             else:
@@ -211,8 +249,104 @@ def SignIn(request):
 
 
 def SignUp(request):
-    return render(request, 'UserModule/SignUp.html')
+    if request.method == 'POST':
+        # Get form data
+        fullname = request.POST.get('fullname', '').strip()
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        address = request.POST.get('address', '').strip()
+        password = request.POST.get('password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+        
+        # Default role is 'basic' - removed from form
+        role = 'basic'
 
+        # Validation flags
+        is_valid = True
+        
+        # Validate Full Name
+        if not fullname or len(fullname) > 100:
+            messages.error(request, "Please enter a valid full name (max 100 characters)")
+            is_valid = False
+        
+        # Validate Username
+        if not username or len(username) > 50:
+            messages.error(request, "Please enter a valid username (max 50 characters)")
+            is_valid = False
+        elif Users.objects.filter(UserName=username).exists():
+            messages.error(request, "Username already exists")
+            is_valid = False
+        
+        # Validate Email
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not email or not re.match(email_regex, email):
+            messages.error(request, "Please enter a valid email address")
+            is_valid = False
+        elif Users.objects.filter(Email=email).exists():
+            messages.error(request, "Email already registered")
+            is_valid = False
+        
+        # Validate Phone (basic validation)
+        if not phone or len(phone) > 15:
+            messages.error(request, "Please enter a valid phone number (max 15 digits)")
+            is_valid = False
+        
+        # Validate Address
+        if not address or len(address) > 255:
+            messages.error(request, "Please enter a valid address (max 255 characters)")
+            is_valid = False
+        
+        # Validate Password
+        if not password or len(password) < 6:
+            messages.error(request, "Password must be at least 6 characters long")
+            is_valid = False
+        elif password != confirm_password:
+            messages.error(request, "Passwords do not match")
+            is_valid = False
+        
+        # If all validations pass, create user
+        if is_valid:
+            try:
+                # Hash the password before saving
+                hashed_password = make_password(password)
+                
+                user = Users.objects.create(
+                    FullName=fullname,
+                    UserName=username,
+                    Email=email,
+                    Phone=phone,
+                    Address=address,
+                    Password=hashed_password,
+                    Role=role,  # Always set to 'basic'
+                    LoginAt=timezone.now()   # Initially no login time
+                )
+                
+                messages.success(request, "Account created successfully! Please sign in.")
+                return redirect('SignIn-index')  # Redirect to sign in page
+                
+            except Exception as e:
+                messages.error(request, f"Error creating account: {str(e)}")
+        
+        # If validation fails, preserve form data in session
+        request.session['form_data'] = {
+            'fullname': fullname,
+            'username': username,
+            'email': email,
+            'phone': phone,
+            'address': address,
+            # No need to preserve role since it's always 'basic'
+        }
+    
+    # Get saved form data if exists
+    form_data = request.session.pop('form_data', {}) if request.method == 'GET' else {}
+    
+    return render(request, 'UserModule/SignUp.html', {
+        'form_data': form_data,
+        # Removed role_choices from context
+    })
+
+@login_required
 def Forgot(request):
     return render(request, 'UserModule/Forgot.html')
 
@@ -223,6 +357,8 @@ def Contact(request):
     return render(request, 'UserModule/Contact.html')
 
 # All cart features sections
+@login_required
+@role_based_redirect
 def Carts(request):
     if 'uid' not in request.session:
         return redirect('SignIn-index')
@@ -258,6 +394,8 @@ def Carts(request):
         "total": total
     })
 
+@login_required
+@role_based_redirect
 @csrf_exempt
 def add_to_cart(request, product_id):
     if request.method != "POST":
@@ -320,7 +458,9 @@ def add_to_cart(request, product_id):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-@csrf_exempt
+@role_based_redirect
+@login_required
+@role_based_redirect
 def update_quantity(request):
     if request.method == "POST":
         cart_id = request.POST.get("cart_id")
@@ -346,6 +486,8 @@ def update_quantity(request):
 
     return JsonResponse({"status": "error", "message": "Invalid request method"})
 
+@login_required
+@role_based_redirect
 @csrf_exempt
 def remove_cart_item(request):
     if request.method == "POST":
@@ -365,8 +507,9 @@ def remove_cart_item(request):
 
     return JsonResponse({"status": "error", "message": "Invalid request"})
 
-
 # Checkout view with messages
+@login_required
+@role_based_redirect
 @transaction.atomic
 def checkout(request):
     if request.method == "POST":
@@ -470,7 +613,8 @@ def checkout(request):
     messages.error(request, "Invalid request method.")
     return redirect("Cart")
 
-
+@login_required
+@role_based_redirect
 def Order(request):
     # 1️⃣ Check session user
     session_uid = request.session.get('uid')
@@ -505,7 +649,8 @@ def Order(request):
 
     return render(request, 'UserModule/Order.html', context)
 
-
+@login_required
+@role_based_redirect
 def AccountSetting(request):
     session_uid = request.session.get('uid')
     if not session_uid:
@@ -516,6 +661,79 @@ def AccountSetting(request):
     except Users.DoesNotExist:
         return redirect("login")
 
+    if request.method == 'POST':
+        # Check which form was submitted
+        if 'update_details' in request.POST:
+            # Handle profile update
+            fullname = request.POST.get('fullname', '').strip()
+            email = request.POST.get('email', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            
+            # Validation
+            is_valid = True
+            
+            # Validate Full Name
+            if not fullname or len(fullname) > 100:
+                messages.error(request, "Please enter a valid full name (max 100 characters)")
+                is_valid = False
+            
+            # Validate Email
+            email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not email or not re.match(email_regex, email):
+                messages.error(request, "Please enter a valid email address")
+                is_valid = False
+            elif Users.objects.filter(Email=email).exclude(UserID=session_uid).exists():
+                messages.error(request, "Email already registered with another account")
+                is_valid = False
+            
+            # Validate Phone
+            if not phone or len(phone) > 15:
+                messages.error(request, "Please enter a valid phone number (max 15 digits)")
+                is_valid = False
+            
+            if is_valid:
+                try:
+                    user.FullName = fullname
+                    user.Email = email
+                    user.Phone = phone
+                    user.save()
+                    messages.success(request, "Profile updated successfully!")
+                except Exception as e:
+                    messages.error(request, f"Error updating profile: {str(e)}")
+        
+        elif 'change_password' in request.POST:
+            # Handle password change
+            current_password = request.POST.get('current_password', '').strip()
+            new_password = request.POST.get('new_password', '').strip()
+            confirm_password = request.POST.get('confirm_password', '').strip()
+            
+            # Validation
+            is_valid = True
+            
+            # Check current password
+            if not check_password(current_password, user.Password):
+                messages.error(request, "Current password is incorrect")
+                is_valid = False
+            
+            # Validate new password
+            if not new_password or len(new_password) < 6:
+                messages.error(request, "New password must be at least 6 characters long")
+                is_valid = False
+            elif new_password == current_password:
+                messages.error(request, "New password must be different from current password")
+                is_valid = False
+            elif new_password != confirm_password:
+                messages.error(request, "New passwords do not match")
+                is_valid = False
+            
+            if is_valid:
+                try:
+                    user.Password = make_password(new_password)
+                    user.save()
+                    messages.success(request, "Password changed successfully!")
+                except Exception as e:
+                    messages.error(request, f"Error changing password: {str(e)}")
+
     # 3️⃣ Pass user details to template
     context = {
         "user": user
@@ -523,9 +741,14 @@ def AccountSetting(request):
 
     return render(request, 'UserModule/AccountSetting.html', context)
 
+
+@login_required
+@role_based_redirect
 def Address(request):
     return render(request, 'UserModule/Address.html')
 
+@login_required
+@role_based_redirect
 def request_seller(request):
     # get logged in user from session
     user_id = request.session.get("uid")
@@ -558,6 +781,7 @@ def request_seller(request):
 
     return render(request, "UserModule/requestseller.html", {"seller_request": seller_request})
 
+@login_required
 def logout_accout(request):
     request.session.flush()  # clear session
     messages.success(request, "You have been logged out successfully.")

@@ -1,0 +1,372 @@
+{% extends 'seller.html' %}
+{% load static %}
+
+{% block title %}Profile Settings{% endblock %}
+
+{% block sellermain %}
+<main>
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="py-6 p-md-6 p-lg-10">
+                        <!-- Messages Display -->
+                        {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert 
+                            {% if message.tags == 'success' %}alert-success
+                            {% elif message.tags == 'error' %}alert-danger
+                            {% elif message.tags == 'warning' %}alert-warning
+                            {% else %}alert-info{% endif %} 
+                            alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <div class="mb-6">
+                            <h2 class="mb-0">Seller Profile</h2>
+                            <p class="text-muted">Welcome back, {{ user.FullName }}!</p>
+                            
+                            <!-- Store Status -->
+                            <div class="d-flex align-items-center mt-3">
+                                <span class="badge 
+                                    {% if seller.Status == 'accepted' %}bg-success
+                                    {% elif seller.Status == 'pending' %}bg-warning
+                                    {% else %}bg-danger{% endif %} 
+                                    fs-6 px-3 py-2">
+                                    <i class="fas fa-store me-2"></i>
+                                    Store Status: {{ seller.get_Status_display }}
+                                </span>
+                                {% if seller.Status == 'pending' %}
+                                <span class="ms-3 text-warning">
+                                    <i class="fas fa-clock me-1"></i> Waiting for approval
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Store Statistics Section -->
+                        <div class="row mb-6">
+                            <div class="col-md-3 col-6 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-primary mb-2">
+                                            <i class="fas fa-box fa-2x"></i>
+                                        </div>
+                                        <h3 class="card-title">{{ total_products }}</h3>
+                                        <p class="card-text text-muted">Total Products</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-success mb-2">
+                                            <i class="fas fa-check-circle fa-2x"></i>
+                                        </div>
+                                        <h3 class="card-title">{{ active_products }}</h3>
+                                        <p class="card-text text-muted">In Stock</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-warning mb-2">
+                                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                        </div>
+                                        <h3 class="card-title">{{ low_stock_products }}</h3>
+                                        <p class="card-text text-muted">Need Restock</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body text-center">
+                                        <div class="text-info mb-2">
+                                            <i class="fas fa-shopping-cart fa-2x"></i>
+                                        </div>
+                                        <h3 class="card-title">{{ completed_orders }}</h3>
+                                        <p class="card-text text-muted">Completed Orders</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Information Form -->
+                        <div class="card mb-6" id="personal-info-card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Personal Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="personal_info">
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" value="{{ user.UserName }}" readonly disabled>
+                                            <small class="form-text text-muted">Username cannot be changed</small>
+                                        </div>
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Account Type</label>
+                                            <input type="text" class="form-control" 
+                                                   value="{{ user.get_Role_display }}" readonly disabled>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Full Name *</label>
+                                            <input type="text" name="full_name" class="form-control" 
+                                                   value="{{ user.FullName }}" maxlength="100" required>
+                                            <div class="invalid-feedback">Please enter your full name.</div>
+                                        </div>
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Email Address *</label>
+                                            <input type="email" name="email" class="form-control" 
+                                                   value="{{ user.Email }}" required>
+                                            <div class="invalid-feedback">Please enter a valid email address.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Phone Number *</label>
+                                            <input type="text" name="phone" class="form-control" 
+                                                   value="{{ user.Phone }}" maxlength="15" required>
+                                            <div class="invalid-feedback">Please enter a valid phone number.</div>
+                                        </div>
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Member Since</label>
+                                            <input type="text" class="form-control" 
+                                                   value="{{ user.CreatedAt|date:'F d, Y' }}" readonly disabled>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label">Address *</label>
+                                            <textarea name="address" class="form-control" rows="3" required>{{ user.Address }}</textarea>
+                                            <div class="invalid-feedback">Please enter your address.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            Update Personal Information
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Store Information Form -->
+                        <div class="card mb-6" id="store-info-card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Store Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="store_info">
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">Store Name *</label>
+                                            <input type="text" name="store_name" class="form-control" 
+                                                   value="{{ seller.StoreName }}" maxlength="255" required>
+                                            <div class="invalid-feedback">Please enter your store name.</div>
+                                        </div>
+                                        <div class="col-lg-6 mb-3">
+                                            <label class="form-label">PAN Number *</label>
+                                            <input type="text" name="pan" class="form-control" 
+                                                   value="{{ seller.PAN }}" maxlength="50" required
+                                                   pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                                                   title="PAN format: ABCDE1234F">
+                                            <div class="invalid-feedback">Please enter a valid PAN number (format: ABCDE1234F).</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label">Store Address *</label>
+                                            <textarea name="store_address" class="form-control" rows="3" required>{{ seller.StoreAddress }}</textarea>
+                                            <div class="invalid-feedback">Please enter your store address.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label">Production License Number *</label>
+                                            <input type="text" name="license_number" class="form-control" 
+                                                   value="{{ seller.ProductionLicenseNumber }}" maxlength="100" required>
+                                            <div class="invalid-feedback">Please enter your license number.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if seller.Status == 'accepted' %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Changing store information will require re-verification. Your store status will be set to 'Pending'.
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            Update Store Information
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Change Password Form -->
+                        <div class="card mb-6" id="password-card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Change Password</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" class="needs-validation" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="change_password">
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-4 mb-3">
+                                            <label class="form-label">Current Password *</label>
+                                            <input type="password" name="current_password" class="form-control" 
+                                                   placeholder="Enter current password" required>
+                                            <div class="invalid-feedback">Please enter your current password.</div>
+                                        </div>
+                                        <div class="col-lg-4 mb-3">
+                                            <label class="form-label">New Password *</label>
+                                            <input type="password" name="new_password" class="form-control" 
+                                                   placeholder="Enter new password" minlength="6" required>
+                                            <div class="invalid-feedback">Password must be at least 6 characters.</div>
+                                        </div>
+                                        <div class="col-lg-4 mb-3">
+                                            <label class="form-label">Confirm New Password *</label>
+                                            <input type="password" name="confirm_password" class="form-control" 
+                                                   placeholder="Confirm new password" required>
+                                            <div class="invalid-feedback">Passwords must match.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        After changing your password, you will be logged out and need to log in again.
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            Change Password
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Form validation
+    $('form.needs-validation').submit(function(e) {
+        const form = $(this);
+        if (!form[0].checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.addClass('was-validated');
+    });
+
+    // Password validation
+    $('input[name="new_password"]').on('input', function() {
+        const password = $(this).val();
+        const confirmInput = $('input[name="confirm_password"]');
+        
+        if (password.length < 6) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        // Update confirm password validation
+        if (confirmInput.val() && confirmInput.val() !== password) {
+            confirmInput.addClass('is-invalid').removeClass('is-valid');
+        } else if (confirmInput.val()) {
+            confirmInput.removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    // Confirm password validation
+    $('input[name="confirm_password"]').on('input', function() {
+        const confirmPass = $(this).val();
+        const password = $('input[name="new_password"]').val();
+        
+        if (confirmPass === '' || confirmPass !== password) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    // PAN number validation
+    $('input[name="pan"]').on('input', function() {
+        const pan = $(this).val().toUpperCase();
+        $(this).val(pan);
+        
+        const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        if (panPattern.test(pan)) {
+            $(this).addClass('is-valid').removeClass('is-invalid');
+        } else if (pan.length > 0) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 5000);
+    
+    // Add animation to stats cards on load
+    $('.card.border-0.shadow-sm').each(function(i) {
+        $(this).delay(i * 200).animate({opacity: 1}, 600);
+    });
+});
+</script>
+
+<style>
+.card.border-0.shadow-sm {
+    opacity: 0;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card.border-0.shadow-sm:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+.card-body.text-center {
+    padding: 2rem 1rem;
+}
+
+.card-body.text-center i {
+    transition: transform 0.3s;
+}
+
+.card.border-0.shadow-sm:hover .card-body.text-center i {
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}

@@ -1,391 +1,339 @@
 {% extends 'superadmin.html' %}
-
 {% load static %}
 
-{% block title %}Dashboard Page{% endblock %}
+{% block title %}Superadmin Dashboard{% endblock %}
 
 {% block superadmin %}
-
 <section class="container">
-                  <!-- row -->
-                  <div class="row mb-8">
-                     <div class="col-md-12">
-                        <!-- card -->
-                        <div
-                           class="card bg-light border-0 rounded-4"
-                           style="background-image: url({% static "/assets/images/slider/slider-image-1.jpg" %} ); background-repeat: no-repeat; background-size: cover; background-position: right">
-                           <div class="card-body p-lg-12">
-                              <h1>Welcome back! FreshCart</h1>
-                              <p>FreshCart is simple & clean design for developer and designer.</p>
-                              <a href="#" class="btn btn-primary">Create Product</a>
-                           </div>
+    <!-- Welcome Card -->
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="card bg-light border-0 rounded-4"
+                 style="background-image: url({% static "assets/images/slider/slider-image-1.jpg" %}); background-repeat: no-repeat; background-size: cover; background-position: right">
+                <div class="card-body p-lg-12">
+                    <h1>Welcome back, Administrator!</h1>
+                    <p><span class="badge bg-light text-dark fs-6 px-3 py-2">{{ admin_user.UserName }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Platform Statistics -->
+    <div class="table-responsive-xl mb-6 mb-lg-0">
+        <div class="row flex-nowrap pb-3 pb-lg-0">
+            <!-- Platform Revenue -->
+            <div class="col-lg-4 col-12 mb-6">
+                <div class="card h-100 card-lg">
+                    <div class="card-body p-6">
+                        <div class="d-flex justify-content-between align-items-center mb-6">
+                            <div>
+                                <h4 class="mb-0 fs-5">Platform Revenue</h4>
+                            </div>
+                            <div class="icon-shape icon-md bg-light-danger text-dark-danger rounded-circle">
+                                <i class="bi bi-cash-coin fs-5"></i>
+                            </div>
                         </div>
-                     </div>
-                  </div>
-                  
-                  <!-- table -->
-                  <div class="table-responsive-xl mb-6 mb-lg-0">
-                     <div class="row flex-nowrap pb-3 pb-lg-0">
-                        <div class="col-lg-4 col-12 mb-6">
-                           <!-- card -->
-                           <div class="card h-100 card-lg">
-                              <!-- card body -->
-                              <div class="card-body p-6">
-                                 <!-- heading -->
-                                 <div class="d-flex justify-content-between align-items-center mb-6">
-                                    <div>
-                                       <h4 class="mb-0 fs-5">Earnings</h4>
-                                    </div>
-                                    <div class="icon-shape icon-md bg-light-danger text-dark-danger rounded-circle">
-                                       <i class="bi bi-currency-dollar fs-5"></i>
-                                    </div>
-                                 </div>
-                                 <!-- project number -->
-                                 <div class="lh-1">
-                                    <h1 class="mb-2 fw-bold fs-2">$93,438.78</h1>
-                                    <span>Monthly revenue</span>
-                                 </div>
-                              </div>
-                           </div>
+                        <div class="lh-1">
+                            <h1 class="mb-2 fw-bold fs-2">Rs. {{ monthly_revenue|floatformat:2 }}</h1>
+                            <span>Monthly from {{ total_sellers }} sellers</span>
                         </div>
-                        <div class="col-lg-4 col-12 mb-6">
-                           <!-- card -->
-                           <div class="card h-100 card-lg">
-                              <!-- card body -->
-                              <div class="card-body p-6">
-                                 <!-- heading -->
-                                 <div class="d-flex justify-content-between align-items-center mb-6">
-                                    <div>
-                                       <h4 class="mb-0 fs-5">Orders</h4>
-                                    </div>
-                                    <div class="icon-shape icon-md bg-light-warning text-dark-warning rounded-circle">
-                                       <i class="bi bi-cart fs-5"></i>
-                                    </div>
-                                 </div>
-                                 <!-- project number -->
-                                 <div class="lh-1">
-                                    <h1 class="mb-2 fw-bold fs-2">42,339</h1>
-                                    <span>
-                                       <span class="text-dark me-1">35+</span>
-                                       New Sales
-                                    </span>
-                                 </div>
-                              </div>
-                           </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Platform Orders -->
+            <div class="col-lg-4 col-12 mb-6">
+                <div class="card h-100 card-lg">
+                    <div class="card-body p-6">
+                        <div class="d-flex justify-content-between align-items-center mb-6">
+                            <div>
+                                <h4 class="mb-0 fs-5">Platform Orders</h4>
+                            </div>
+                            <div class="icon-shape icon-md bg-light-warning text-dark-warning rounded-circle">
+                                <i class="bi bi-cart fs-5"></i>
+                            </div>
                         </div>
-                        <div class="col-lg-4 col-12 mb-6">
-                           <!-- card -->
-                           <div class="card h-100 card-lg">
-                              <!-- card body -->
-                              <div class="card-body p-6">
-                                 <!-- heading -->
-                                 <div class="d-flex justify-content-between align-items-center mb-6">
-                                    <div>
-                                       <h4 class="mb-0 fs-5">Customer</h4>
-                                    </div>
-                                    <div class="icon-shape icon-md bg-light-info text-dark-info rounded-circle">
-                                       <i class="bi bi-people fs-5"></i>
-                                    </div>
-                                 </div>
-                                 <!-- project number -->
-                                 <div class="lh-1">
-                                    <h1 class="mb-2 fw-bold fs-2">39,354</h1>
-                                    <span>
-                                       <span class="text-dark me-1">30+</span>
-                                       new in 2 days
-                                    </span>
-                                 </div>
-                              </div>
-                           </div>
+                        <div class="lh-1">
+                            <h1 class="mb-2 fw-bold fs-2">{{ monthly_transactions }}</h1>
+                            <span>Monthly Orders</span>
                         </div>
-                     </div>
-                  </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Platform Users -->
+            <div class="col-lg-4 col-12 mb-6">
+                <div class="card h-100 card-lg">
+                    <div class="card-body p-6">
+                        <div class="d-flex justify-content-between align-items-center mb-6">
+                            <div>
+                                <h4 class="mb-0 fs-5">Platform Users</h4>
+                            </div>
+                            <div class="icon-shape icon-md bg-light-info text-dark-info rounded-circle">
+                                <i class="bi bi-people fs-5"></i>
+                            </div>
+                        </div>
+                        <div class="lh-1">
+                            <h1 class="mb-2 fw-bold fs-2">{{ total_users }}</h1>
+                            <span>{{ total_customers }} customers, {{ total_sellers }} sellers</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                  <!-- row -->
-                  <div class="row">
-                     <div class="col-xl-8 col-lg-6 col-md-12 col-12 mb-6">
-                        <!-- card -->
-                        <div class="card h-100 card-lg">
-                           <div class="card-body p-6">
-                              <!-- heading -->
-                              <div class="d-flex justify-content-between">
-                                 <div>
-                                    <h3 class="mb-1 fs-5">Revenue</h3>
-                                    <small>(+63%) than last year)</small>
-                                 </div>
-                                 <div>
-                                    <!-- select option -->
-                                    <select class="form-select">
-                                       <option selected>2019</option>
-                                       <option value="2023">2020</option>
-                                       <option value="2024">2021</option>
-                                       <option value="2025">2022</option>
-                                       <option value="2025">2023</option>
+    <!-- Charts Section -->
+    <div class="row">
+        <!-- Sellers Chart -->
+        <div class="col-xl-8 col-lg-6 col-md-12 col-12 mb-6">
+            <div class="card h-100 card-lg">
+                <div class="card-body p-6">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h3 class="mb-1 fs-5">Seller Performance</h3>
+                        </div>
+                    
+                        <!-- Date Filter Controls -->
+                        <div class="d-flex gap-2">
+                            <!-- Add this form around your selectors -->
+                            <form method="GET" action="{% url 'superadmin-dashboard' %}" class="d-flex gap-2">
+                                <!-- Month Selector -->
+                                <div>
+                                    <select name="month" class="form-select" id="monthSelect">
+                                        {% for month_num, month_name in months %}
+                                        <option value="{{ month_num }}" {% if selected_month == month_num %}selected{% endif %}>
+                                            {{ month_name }}
+                                        </option>
+                                        {% endfor %}
                                     </select>
-                                 </div>
-                              </div>
-                              <!-- chart -->
-                              <div id="revenueChart" class="mt-6"></div>
-                           </div>
+                                </div>
+
+                                <!-- Year Selector -->
+                                <div>
+                                    <select name="year" class="form-select" id="yearSelect">
+                                        {% for year in years_range reversed %}
+                                        <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+
+                                <!-- Reset Button -->
+                                <a href="{% url 'superadmin-dashboard' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-sync"></i> Reset
+                                </a>
+                            </form>
                         </div>
-                     </div>
-                     <div class="col-xl-4 col-lg-6 col-12 mb-6">
-                        <!-- card -->
-                        <div class="card h-100 card-lg">
-                           <!-- card body -->
-                           <div class="card-body p-6">
-                              <!-- heading -->
-                              <h3 class="mb-0 fs-5">Total Sales</h3>
-                              <div id="totalSale" class="mt-6 d-flex justify-content-center"></div>
-                              <div class="mt-4">
-                                 <!-- list -->
-                                 <ul class="list-unstyled mb-0">
-                                    <li class="mb-2">
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-primary" viewBox="0 0 16 16">
-                                          <circle cx="8" cy="8" r="8" />
-                                       </svg>
-                                       <span class="ms-1">
-                                          <span class="text-dark">Shippings $32.98</span>
-                                          (2%)
-                                       </span>
-                                    </li>
-                                    <li class="mb-2">
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-warning" viewBox="0 0 16 16">
-                                          <circle cx="8" cy="8" r="8" />
-                                       </svg>
-                                       <span class="ms-1">
-                                          <span class="text-dark">Refunds $11</span>
-                                          (11%)
-                                       </span>
-                                    </li>
-                                    <li class="mb-2">
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-danger" viewBox="0 0 16 16">
-                                          <circle cx="8" cy="8" r="8" />
-                                       </svg>
-                                       <span class="ms-1">
-                                          <span class="text-dark">Order $14.87</span>
-                                          (1%)
-                                       </span>
-                                    </li>
-                                    <li>
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-info" viewBox="0 0 16 16">
-                                          <circle cx="8" cy="8" r="8" />
-                                       </svg>
-                                       <span class="ms-1">
-                                          <span class="text-dark">Income 3,271</span>
-                                          (86%)
-                                       </span>
-                                    </li>
-                                 </ul>
-                              </div>
-                           </div>
+                    </div>
+                    
+                    <!-- Chart -->
+                    <div id="sellersChart"></div>
+                
+                    <!-- Chart Data -->
+                    <script type="application/json" id="chartData">
+                        {{ chart_data_json|safe }}
+                    </script>
+                
+                    <!-- Add data attributes for pie chart (optional) -->
+                    <div data-accepted-sellers="{{ accepted_sellers }}" 
+                         data-pending-sellers="{{ pending_sellers }}" 
+                         data-rejected-sellers="{{ rejected_sellers }}" 
+                         style="display: none;"></div>
+                
+                </div>
+            </div>
+        </div>
+    
+        <!-- Seller Applications -->
+        <div class="col-xl-4 col-lg-6 col-12 mb-6">
+            <div class="card h-100 card-lg">
+                <div class="card-body p-6">
+                    <h3 class="mb-0 fs-5">Seller Applications</h3>
+                    <div id="sellerStatusChart" class="mt-6 d-flex justify-content-center"></div>
+                    <div class="mt-4">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-success" viewBox="0 0 16 16">
+                                    <circle cx="8" cy="8" r="8" />
+                                </svg>
+                                <span class="ms-1">
+                                    <span class="text-dark">Accepted: {{ accepted_sellers }}</span>
+                                </span>
+                            </li>
+                            <li class="mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-warning" viewBox="0 0 16 16">
+                                    <circle cx="8" cy="8" r="8" />
+                                </svg>
+                                <span class="ms-1">
+                                    <span class="text-dark">Pending: {{ pending_sellers }}</span>
+                                </span>
+                            </li>
+                            <li class="mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-danger" viewBox="0 0 16 16">
+                                    <circle cx="8" cy="8" r="8" />
+                                </svg>
+                                <span class="ms-1">
+                                    <span class="text-dark">Rejected: {{ rejected_sellers }}</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Sellers Section -->
+    <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
+            <div class="card h-100 card-lg">
+                <div class="card-body p-6">
+                    <h3 class="mb-0 fs-5">Top Sellers (This Month)</h3>
+                    <p class="text-muted mb-4">Seller Name : Total Amount Sold</p>
+                    <div class="mt-6">
+                        {% for seller in top_sellers %}
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fs-6">{{ seller.store_name }}</h5>
+                                <span>
+                                    <span class="me-1 text-dark">Rs. {{ seller.total_sales|floatformat:2 }}</span>
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Owner: {{ seller.owner_name }}</small>
+                                <small class="text-muted">{{ seller.transactions }} orders</small>
+                            </div>
+                            <div>
+                                <div class="progress bg-light-primary" style="height: 6px">
+                                    <div class="progress-bar bg-primary" 
+                                         role="progressbar" 
+                                         style="width: {% if top_sellers.0.total_sales > 0 %}{% widthratio seller.total_sales top_sellers.0.total_sales 100 %}%{% else %}0{% endif %}"
+                                         aria-valuenow="{{ seller.total_sales }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="{{ top_sellers.0.total_sales }}"></div>
+                                </div>
+                            </div>
                         </div>
-                     </div>
-                  </div>
-                  <!-- row -->
-                  <div class="row">
-                     <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
-                        <!-- card -->
-                        <div class="card h-100 card-lg">
-                           <!-- card body -->
-                           <div class="card-body p-6">
-                              <h3 class="mb-0 fs-5">Sales Overview</h3>
-                              <div class="mt-6">
-                                 <!-- text -->
-                                 <div class="mb-5">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                       <h5 class="fs-6">Total Profit</h5>
-                                       <span>
-                                          <span class="me-1 text-dark">$1,619</span>
-                                          (8.6%)
-                                       </span>
-                                    </div>
-                                    <!-- main wrapper -->
-                                    <div>
-                                       <!-- progressbar -->
-                                       <div class="progress bg-light-primary" style="height: 6px">
-                                          <div
-                                             class="progress-bar bg-primary"
-                                             role="progressbar"
-                                             aria-label="Example 1px high"
-                                             style="width: 25%"
-                                             aria-valuenow="25"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100"></div>
-                                       </div>
-                                    </div>
-                                 </div>
-                                 <div class="mb-5">
-                                    <!-- text -->
-                                    <div class="d-flex align-items-center justify-content-between">
-                                       <h5 class="fs-6">Total Income</h5>
-                                       <span>
-                                          <span class="me-1 text-dark">$3,571</span>
-                                          (86.4%)
-                                       </span>
-                                    </div>
-                                    <div>
-                                       <!-- progressbar -->
-                                       <div class="progress bg-info-soft" style="height: 6px">
-                                          <div
-                                             class="progress-bar bg-info"
-                                             role="progressbar"
-                                             aria-label="Example 1px high"
-                                             style="width: 88%"
-                                             aria-valuenow="88"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100"></div>
-                                       </div>
-                                    </div>
-                                 </div>
-                                 <div>
-                                    <!-- text -->
-                                    <div class="d-flex align-items-center justify-content-between">
-                                       <h5 class="fs-6">Total Expenses</h5>
-                                       <span>
-                                          <span class="me-1 text-dark">$3,430</span>
-                                          (74.5%)
-                                       </span>
-                                    </div>
-                                    <div>
-                                       <!-- progressbar -->
-                                       <div class="progress bg-light-danger" style="height: 6px">
-                                          <div
-                                             class="progress-bar bg-danger"
-                                             role="progressbar"
-                                             aria-label="Example 1px high"
-                                             style="width: 45%"
-                                             aria-valuenow="45"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100"></div>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">No seller sales data available</p>
                         </div>
-                     </div>
-                     <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
-                        <div class="position-relative h-100">
-                           <!-- card -->
-                           <div class="card card-lg mb-6">
-                              <!-- card body -->
-                              <div class="card-body px-6 py-8">
-                                 <div class="d-flex align-items-center">
-                                    <div>
-                                       <!-- svg -->
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-bell text-warning" viewBox="0 0 16 16">
-                                          <path
-                                             d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z" />
-                                       </svg>
-                                    </div>
-                                    <!-- text -->
-                                    <div class="ms-4">
-                                       <h5 class="mb-1">Start your day with New Notification.</h5>
-                                       <p class="mb-0">
-                                          You have
-                                          <a class="link-info" href="#!">2 new notification</a>
-                                       </p>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-                           <!-- card -->
-                           <div class="card card-lg">
-                              <!-- card body -->
-                              <div class="card-body px-6 py-8">
-                                 <div class="d-flex align-items-center">
-                                    <!-- svg -->
-                                    <div>
-                                       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-lightbulb text-success" viewBox="0 0 16 16">
-                                          <path
-                                             d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z" />
-                                       </svg>
-                                    </div>
-                                    <!-- text -->
-                                    <div class="ms-4">
-                                       <h5 class="mb-1">Monitor your Sales and Profitability</h5>
-                                       <p class="mb-0"><a class="link-info" href="#!">View Performance</a></p>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Platform Overview -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
+            <div class="position-relative h-100">
+                <!-- Platform Overview Card -->
+                <div class="card card-lg mb-6">
+                    <div class="card-body px-6 py-8">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-bar-chart text-primary" viewBox="0 0 16 16">
+                                    <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+                                </svg>
+                            </div>
+                            <div class="ms-4">
+                                <h5 class="mb-1">Platform Overview</h5>
+                                <p class="mb-0">
+                                    Total Revenue: <span class="fw-bold">Rs. {{ total_revenue|floatformat:2 }}</span>
+                                </p>
+                                <p class="mb-0">
+                                    New Users: <span class="fw-bold">+{{ new_users_30_days }}</span> (30 days)
+                                </p>
+                            </div>
                         </div>
-                     </div>
-                  </div>
-                  <!-- row -->
-                  <div class="row">
-                     <div class="col-xl-12 col-lg-12 col-md-12 col-12 mb-6">
-                        <div class="card h-100 card-lg">
-                           <!-- heading -->
-                           <div class="p-6">
-                              <h3 class="mb-0 fs-5">Recent Order</h3>
-                           </div>
-                           <div class="card-body p-0">
-                              <!-- table -->
-                              <div class="table-responsive">
-                                 <table class="table table-centered table-borderless text-nowrap table-hover">
-                                    <thead class="bg-light">
-                                       <tr>
-                                          <th scope="col">Order Number</th>
-                                          <th scope="col">Product Name</th>
-                                          <th scope="col">Order Date</th>
-                                          <th scope="col">Price</th>
-                                          <th scope="col">Status</th>
-                                       </tr>
-                                    </thead>
-                                    <tbody>
-                                       <tr>
-                                          <td>#FC0005</td>
-                                          <td>Haldiram's Sev Bhujia</td>
-                                          <td>28 March 2023</td>
-                                          <td>$18.00</td>
-                                          <td>
-                                             <span class="badge bg-light-primary text-dark-primary">Shipped</span>
-                                          </td>
-                                       </tr>
-                                       <tr>
-                                          <td>#FC0004</td>
-                                          <td>NutriChoice Digestive</td>
-                                          <td>24 March 2023</td>
-                                          <td>$24.00</td>
-                                          <td>
-                                             <span class="badge bg-light-warning text-dark-warning">Pending</span>
-                                          </td>
-                                       </tr>
-                                       <tr>
-                                          <td>#FC0003</td>
-                                          <td>Onion Flavour Potato</td>
-                                          <td>8 Feb 2023</td>
-                                          <td>$9.00</td>
-                                          <td>
-                                             <span class="badge bg-light-danger text-dark-danger">Cancel</span>
-                                          </td>
-                                       </tr>
-                                       <tr>
-                                          <td>#FC0002</td>
-                                          <td>Blueberry Greek Yogurt</td>
-                                          <td>20 Jan 2023</td>
-                                          <td>$12.00</td>
-                                          <td>
-                                             <span class="badge bg-light-warning text-dark-warning">Pending</span>
-                                          </td>
-                                       </tr>
-                                       <tr>
-                                          <td>#FC0001</td>
-                                          <td>Slurrp Millet Chocolate</td>
-                                          <td>14 Jan 2023</td>
-                                          <td>$8.00</td>
-                                          <td>
-                                             <span class="badge bg-light-info text-dark-info">Processing</span>
-                                          </td>
-                                       </tr>
-                                    </tbody>
-                                 </table>
-                              </div>
-                           </div>
+                    </div>
+                </div>
+                
+                <!-- Top Seller Highlight -->
+                <div class="card card-lg">
+                    <div class="card-body px-6 py-8">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-trophy text-warning" viewBox="0 0 16 16">
+                                    <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935zM3.504 1c.007.517.026 1.006.056 1.469.13 2.028.457 3.546.87 4.667C5.294 9.48 6.484 10 7 10a.5.5 0 0 1 .5.5v2.61a1 1 0 0 1-.757.97l-1.426.356a.5.5 0 0 0-.179.085L4.5 15h7l-.638-.479a.5.5 0 0 0-.18-.085l-1.425-.356a1 1 0 0 1-.757-.97V10.5A.5.5 0 0 1 9 10c.516 0 1.706-.52 2.57-2.864.413-1.12.74-2.64.87-4.667.03-.463.049-.952.056-1.469H3.504z"/>
+                                </svg>
+                            </div>
+                            <div class="ms-4">
+                                <h5 class="mb-1">Top Seller</h5>
+                                {% if top_seller %}
+                                <p class="mb-0">
+                                    <span class="fw-bold">{{ top_seller.store_name }}</span>: 
+                                    <span class="text-success">Rs. {{ top_seller.total_sales|floatformat:2 }}</span>
+                                </p>
+                                <p class="mb-0 small text-muted mt-1">
+                                    {{ top_seller.transactions }} orders, {{ top_seller.customers }} customers
+                                </p>
+                                {% else %}
+                                <p class="mb-0 text-muted">No seller data available</p>
+                                {% endif %}
+                            </div>
                         </div>
-                     </div>
-                  </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-12 mb-6">
+            <div class="card h-100 card-lg">
+                <div class="p-6">
+                    <h3 class="mb-0 fs-5">Recent Transactions</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-borderless text-nowrap table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Seller</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trans in recent_transactions %}
+                                <tr>
+                                    <td>{{ trans.order_number }}</td>
+                                    <td>{{ trans.customer }}</td>
+                                    <td>
+                                        <span class="fw-bold">{{ trans.seller }}</span>
+                                        <br>
+                                        <small class="text-muted">{{ trans.seller_owner }}</small>
+                                    </td>
+                                    <td>{{ trans.amount }}</td>
+                                    <td>{{ trans.date }}</td>
+                                    <td>
+                                        <span class="badge {{ trans.status_class }}">{{ trans.status|title }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">No transactions found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </section>
 {% endblock %}

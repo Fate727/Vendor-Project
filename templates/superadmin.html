@@ -156,14 +156,11 @@
 
 							<ul class="list-unstyled px-2 py-3">
 								<li>
-									<a class="dropdown-item" href="#!">Home</a>
-								</li>
-								<li>
-									<a class="dropdown-item" href="#!">Profile</a>
+									<a class="dropdown-item" href="{% url "superadmin-dashboard" %}">Home</a>
 								</li>
 
 								<li>
-									<a class="dropdown-item" href="#!">Settings</a>
+									<a class="dropdown-item" href=" {% url "admin_profile" %} ">Settings</a>
 								</li>
 							</ul>
 							<div class="border-top px-5 py-3">
@@ -179,19 +176,17 @@
 
 
          <div class="main-wrapper">
-            <!-- navbar vertical -->
             <!-- navbar -->
 <nav class="navbar-vertical-nav d-none d-xl-block">
 	<div class="navbar-vertical">
 		<div class="px-4 py-5">
-			<a href="../index.html" class="navbar-brand">
-				<img src="{% static "/assets/images/logo/freshcart-logo.svg" %} " alt="" />
-			</a>
+			<h4>Admin</h4>
+			<h4>Dashboard</h4>
 		</div>
 		<div class="navbar-vertical-content flex-grow-1" data-simplebar="">
 			<ul class="navbar-nav flex-column" id="sideNavbar">
 				<li class="nav-item">
-					<a class="nav-link  active " href="index.html">
+					<a class="nav-link  active " href=" {% url "superadmin-dashboard" %} ">
 						<div class="d-flex align-items-center">
 							<span class="nav-link-icon"><i class="bi bi-house"></i></span>
 							<span class="nav-link-text">Dashboard</span>
@@ -246,11 +241,7 @@
 					<div id="navVendor" class="collapse " data-bs-parent="#sideNavbar">
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<a class="nav-link " href="{% url  'vendorrequest' %}">Request Vendor</a>
-							</li>
-							<!-- Nav item -->
-							<li class="nav-item">
-								<a class="nav-link " href="{% url 'addusers-index' %}">Vendors</a>
+								<a class="nav-link " href="{% url  'vendorrequest' %}">Vendor</a>
 							</li>
 						</ul>
 					</div>
@@ -275,7 +266,7 @@
 					<div id="navCustomer" class="collapse " data-bs-parent="#sideNavbar">
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<a class="nav-link " href="{% url  'userslist-index' %}">Customers</a>
+								<a class="nav-link" href="{% url 'userslist-index' %}">Customers</a>
 							</li>
 							<!-- Nav item -->
 							<li class="nav-item">
@@ -285,86 +276,32 @@
 					</div>
 				</li>
 
-				
-				<!-- Nav item -->
 				<li class="nav-item">
 					<a
 						class="nav-link  collapsed "
 						href="#"
 						data-bs-toggle="collapse"
-						data-bs-target="#navMenuLevelFirst"
+						data-bs-target="#navRe"
 						aria-expanded="false"
-						aria-controls="navMenuLevelFirst"
+						aria-controls="navRe"
 					>
-						<span class="nav-link-icon"><i class="bi bi-arrow-90deg-down"></i></span>
-						<span class="nav-link-text">Menu Level</span>
+						<div class="d-flex align-items-center">
+							<span class="nav-link-icon"><i class="bi bi-star"></i></span>
+							<span class="nav-link-text">Feedback/Reviews</span>
+						</div>
 					</a>
-					<div id="navMenuLevelFirst" class="collapse " data-bs-parent="#sideNavbar">
+					<div id="navRe" class="collapse " data-bs-parent="#sideNavbar">
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<a
-									class="nav-link "
-									href="#"
-									data-bs-toggle="collapse"
-									data-bs-target="#navMenuLevelSecond1"
-									aria-expanded="false"
-									aria-controls="navMenuLevelSecond1"
-								>
-									Two Level
-								</a>
-								<div id="navMenuLevelSecond1" class="collapse" data-bs-parent="#navMenuLevel">
-									<ul class="nav flex-column">
-										<li class="nav-item">
-											<a class="nav-link " href="#">NavItem 1</a>
-										</li>
-										<li class="nav-item">
-											<a class="nav-link " href="#">NavItem 2</a>
-										</li>
-									</ul>
-								</div>
+								<a class="nav-link" href="{% url 'userslist-index' %}">Reviews</a>
 							</li>
+							<!-- Nav item -->
 							<li class="nav-item">
-								<a
-									class="nav-link  collapsed "
-									href="#"
-									data-bs-toggle="collapse"
-									data-bs-target="#navMenuLevelThreeOne1"
-									aria-expanded="false"
-									aria-controls="navMenuLevelThreeOne1"
-								>
-									Three Level
-								</a>
-								<div id="navMenuLevelThreeOne1" class="collapse " data-bs-parent="#navMenuLevel">
-									<ul class="nav flex-column">
-										<li class="nav-item">
-											<a
-												class="nav-link  collapsed "
-												href="#"
-												data-bs-toggle="collapse"
-												data-bs-target="#navMenuLevelThreeTwo"
-												aria-expanded="false"
-												aria-controls="navMenuLevelThreeTwo"
-											>
-												NavItem 1
-											</a>
-											<div id="navMenuLevelThreeTwo" class="collapse collapse " data-bs-parent="#navMenuLevelThree">
-												<ul class="nav flex-column">
-													<li class="nav-item">
-														<a class="nav-link " href="#">NavChild Item 1</a>
-													</li>
-												</ul>
-											</div>
-										</li>
-										<li class="nav-item">
-											<a class="nav-link " href="#">Nav Item 2</a>
-										</li>
-									</ul>
-								</div>
+								<a class="nav-link " href="{% url 'addusers-index' %}">Feedback</a>
 							</li>
 						</ul>
 					</div>
 				</li>
-
 			</ul>
 		</div>
 	</div>
@@ -381,7 +318,7 @@
 		<div class="navbar-vertical-content flex-grow-1" data-simplebar="">
 			<ul class="navbar-nav flex-column">
 				<li class="nav-item">
-					<a class="nav-link  active " href="index.html">
+					<a class="nav-link  active " href=" {% url "superadmin-dashboard" %}">
 						<div class="d-flex align-items-center">
 							<span class="nav-link-icon"><i class="bi bi-house"></i></span>
 							<span>Dashboard</span>
@@ -422,10 +359,7 @@
 				    <div id="navVendor" class="collapse" data-bs-parent="#sideNavbar">
 				        <ul class="nav flex-column ms-3">
 				            <li class="nav-item">
-				                <a class="nav-link" href="{% url 'vendorrequest' %}">Request Vendor</a>
-				            </li>
-				            <li class="nav-item">
-				                <a class="nav-link" href="{% url 'addusers-index' %}">Vendors</a>
+				                <a class="nav-link" href="{% url 'vendorrequest' %}">Vendors</a>
 				            </li>
 				        </ul>
 				    </div>
@@ -476,6 +410,6 @@
         <script src="{% static 'assets/js/theme.min.js' %}"></script>
 
         <script src="{% static 'assets/libs/apexcharts/dist/apexcharts.min.js' %}"></script>
-        <script src="{% static 'assets/js/vendors/chart.js' %}"></script>
+		<script src="{% static 'assets/js/vendors/adminchart.js' %}"></script>
    </body>
-</html>
+</html>	

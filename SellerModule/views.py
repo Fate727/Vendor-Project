@@ -14,6 +14,10 @@ from django.utils import timezone
 from datetime import timedelta, datetime
 from django.db.models import Sum, Count
 from decorators import login_required, seller_required
+from django.db.models.functions import ExtractYear
+from django.contrib.auth.hashers import make_password, check_password
+from django.views.decorators.csrf import csrf_exempt
+import re
 
 @seller_required
 @login_required
@@ -31,12 +35,62 @@ def dashboard(request):
         return redirect('user-index')
 
     today = timezone.now()
-    thirty_days_ago = today - timedelta(days=30)
+    
+    # ========== GET FILTER PARAMETERS ==========
+    selected_year = request.GET.get('year', today.year)
+    selected_month = request.GET.get('month', today.month)
+    
+    try:
+        selected_year = int(selected_year)
+        selected_month = int(selected_month)
+    except (ValueError, TypeError):
+        selected_year = today.year
+        selected_month = today.month
+    
+    # Validate month range
+    if selected_month < 1 or selected_month > 12:
+        selected_month = today.month
+    
+    # ========== MONTHS AND YEARS LIST FOR TEMPLATE ==========
+    months_list = [
+        (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
+        (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
+        (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
+    ]
     
     # Get all transactions for this seller
     transactions = Transaction.objects.filter(SellerID=seller)
     
-    # Monthly metrics (last 30 days)
+    # Get available years from seller's transactions
+    if transactions.exists():
+        from django.db.models.functions import ExtractYear
+        year_dates = transactions.annotate(
+            year=ExtractYear('CreatedAt')
+        ).values('year').distinct().order_by('-year')
+        years_range_list = [year['year'] for year in year_dates]
+    else:
+        years_range_list = []
+    
+    # If no years found, add current year
+    if not years_range_list:
+        years_range_list = [today.year]
+    
+    # ========== CREATE DATE RANGE FOR SELECTED MONTH/YEAR ==========
+    month_start = datetime(selected_year, selected_month, 1)
+    if selected_month == 12:
+        month_end = datetime(selected_year + 1, 1, 1)
+    else:
+        month_end = datetime(selected_year, selected_month + 1, 1)
+    
+    # Convert to timezone aware
+    if timezone.is_naive(month_start):
+        month_start = timezone.make_aware(month_start)
+    if timezone.is_naive(month_end):
+        month_end = timezone.make_aware(month_end)
+    
+    # ========== MONTHLY METRICS (LAST 30 DAYS) - Always shows last 30 days ==========
+    thirty_days_ago = today - timedelta(days=30)
+    
     monthly_transactions = transactions.filter(
         CreatedAt__gte=thirty_days_ago,
         Status='completed'
@@ -49,150 +103,125 @@ def dashboard(request):
     monthly_orders = monthly_transactions.count()
     monthly_customers = monthly_transactions.values('UserID').distinct().count()
     
-    # Get sales data for the last 7 days for the chart
-    last_7_days = today - timedelta(days=6)
-    daily_sales = {}
+    # ========== SELECTED MONTH METRICS ==========
+    selected_month_transactions = transactions.filter(
+        CreatedAt__gte=month_start,
+        CreatedAt__lt=month_end,
+        Status='completed'
+    )
     
-    # Initialize all 7 days with empty data
-    for i in range(7):
-        date = (today - timedelta(days=i)).date()
-        daily_sales[date.isoformat()] = {
-            'total': 0,
-            'breakdown': []
-        }
+    selected_month_earnings = selected_month_transactions.aggregate(
+        total=Sum('TotalAmount')
+    )['total'] or 0
     
-    # Fill with actual data from transactions
-    daily_transactions = monthly_transactions.filter(
-        CreatedAt__gte=last_7_days
-    ).order_by('CreatedAt')
+    selected_month_orders = selected_month_transactions.count()
+    selected_month_customers = selected_month_transactions.values('UserID').distinct().count()
     
-    # Process each transaction for the chart data
-    for transaction in daily_transactions:
-        date_str = transaction.CreatedAt.date().isoformat()
-        if date_str in daily_sales:
-            # Add transaction total
-            daily_sales[date_str]['total'] += float(transaction.TotalAmount)
+    # ========== CHART DATA FOR SELECTED MONTH ==========
+    import calendar
+    days_in_month = calendar.monthrange(selected_year, selected_month)[1]
+    
+    # Initialize arrays for the month
+    date_labels = [f"Day {day}" for day in range(1, days_in_month + 1)]
+    daily_totals = [0] * days_in_month
+    daily_breakdown = {str(i): [] for i in range(days_in_month)}
+    
+    # Group transactions by day
+    for transaction in selected_month_transactions:
+        day_index = transaction.CreatedAt.day - 1  # 0-based index
+        if 0 <= day_index < len(daily_totals):
+            # Add to daily total
+            daily_totals[day_index] += float(transaction.TotalAmount or 0)
             
-            # Add product breakdown from Products JSON field
-            # Structure: [{"unit": "piece-3", "quantity": 1, "subtotal": 1899.0, "product_id": 1, "unit_price": 1899.0, "product_name": "Men's Cotton T-Shirt"}]
-            if transaction.Products and isinstance(transaction.Products, list):
-                for product_item in transaction.Products:
-                    if isinstance(product_item, dict):
-                        # Get product details
-                        product_name = product_item.get('product_name', 'Product')
-                        quantity = product_item.get('quantity', 1)
-                        unit_price = product_item.get('unit_price')
-                        
-                        # Truncate long product names
-                        if len(product_name) > 20:
-                            product_name = product_name[:20] + "..."
-                        
-                        if unit_price is not None:
-                            try:
-                                unit_price_float = float(unit_price)
+            # Add product breakdown if available
+            try:
+                if transaction.Products:
+                    products_data = transaction.Products
+                    
+                    if isinstance(products_data, str):
+                        import json as json_module
+                        products_data = json_module.loads(products_data)
+                    
+                    if isinstance(products_data, list) and len(products_data) > 0:
+                        for product_item in products_data:
+                            if isinstance(product_item, dict):
+                                product_name = product_item.get('product_name', 'Product')
+                                quantity = product_item.get('quantity', 1)
+                                unit_price = product_item.get('unit_price', 0)
+                                
                                 # Add product info for each quantity
                                 for _ in range(int(quantity)):
-                                    # Store as object with name and price
-                                    daily_sales[date_str]['breakdown'].append({
-                                        'name': product_name,
-                                        'price': unit_price_float
+                                    daily_breakdown[str(day_index)].append({
+                                        'name': product_name[:20] + "..." if len(product_name) > 20 else product_name,
+                                        'price': float(unit_price)
                                     })
-                            except (ValueError, TypeError):
-                                # Fallback
-                                daily_sales[date_str]['breakdown'].append({
-                                    'name': 'Product',
-                                    'price': float(transaction.TotalAmount)
-                                })
-                        else:
-                            # No unit_price, use transaction total
-                            daily_sales[date_str]['breakdown'].append({
-                                'name': product_name,
-                                'price': float(transaction.TotalAmount)
-                            })
-                    else:
-                        # Not a dict
-                        daily_sales[date_str]['breakdown'].append({
-                            'name': 'Product',
-                            'price': float(transaction.TotalAmount)
-                        })
-            else:
-                # No product data
-                daily_sales[date_str]['breakdown'].append({
-                    'name': 'Product',
-                    'price': float(transaction.TotalAmount)
-                })
+            except Exception as e:
+                print(f"Error processing product breakdown: {e}")
     
-    # Prepare chart data - ONLY days with sales
-    sorted_dates = sorted(daily_sales.keys(), reverse=True)  # Most recent first
-    daily_totals = []
-    daily_breakdown = {}
-    date_labels = []
-    filtered_dates = []
+    # Filter to only show days with sales
+    filtered_labels = []
+    filtered_totals = []
+    filtered_breakdown = {}
     
-    # Filter only days with sales
-    for i, date_str in enumerate(sorted_dates):
-        sales_data = daily_sales[date_str]
-        if sales_data['total'] > 0:  # Only include days with sales
-            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-            # Format as "Dec-10", "Dec-09", etc.
-            date_labels.append(date_obj.strftime('%b-%d'))  # Format: Dec-10
-            
-            daily_totals.append(round(sales_data['total'], 2))
-            # Store the breakdown objects as-is (they already contain name and price)
-            daily_breakdown[str(len(filtered_dates))] = sales_data['breakdown']
-            filtered_dates.append(date_str)
+    for i, total in enumerate(daily_totals):
+        if total > 0:
+            filtered_labels.append(f"Day {i+1}")
+            filtered_totals.append(total)
+            filtered_breakdown[str(len(filtered_totals) - 1)] = daily_breakdown[str(i)]
     
-    # Check if we have any real sales data
-    has_sales_data = len(daily_totals) > 0
+    # If no sales in selected month, show example data for first 7 days
+    if not filtered_totals:
+        # Show example for first 7 days of the month
+        filtered_labels = [f"Day {day}" for day in range(1, 8) if day <= days_in_month]
+        filtered_totals = [0] * len(filtered_labels)
+        filtered_breakdown = {str(i): [] for i in range(len(filtered_labels))}
     
-    # If no sales data, create empty arrays for the chart
-    if not has_sales_data:
-        # Get last 7 days for the static chart labels
-        for i in range(7):
-            date = (today - timedelta(days=i)).date()
-            date_labels.append(date.strftime('%b-%d'))
-        
-        daily_totals = [0] * 7
-        daily_breakdown = {str(i): [] for i in range(7)}
-    
-    # Convert to JSON-serializable format
-    sales_chart_data = {
-        'daily_totals': daily_totals,
-        'daily_breakdown': daily_breakdown,
-        'date_labels': date_labels,
-        'has_sales_data': has_sales_data,
-        'total_last_7_days': sum(daily_totals)
+    # Prepare chart data
+    chart_data = {
+        'daily_totals': filtered_totals,
+        'daily_breakdown': filtered_breakdown,
+        'date_labels': filtered_labels,
+        'has_sales_data': any(total > 0 for total in filtered_totals),
+        'total_last_7_days': sum(filtered_totals[:7]) if filtered_totals else 0
     }
     
-    # Convert to JSON string
-    sales_chart_data_json = json.dumps(sales_chart_data)
+    chart_data_json = json.dumps(chart_data)
     
-    # Recent transactions for table
+    # ========== RECENT ORDERS (Always show latest 10) ==========
     recent_transactions = transactions.order_by('-CreatedAt')[:10]
     recent_orders = []
+    
     for transaction in recent_transactions:
         product_name = "Product"
-        if transaction.Products and len(transaction.Products) > 0:
-            first_product = transaction.Products[0]
-            if isinstance(first_product, dict):
-                # Try to get product_name directly from the Products JSON
-                product_name = first_product.get('product_name', 'Product')
-                if len(product_name) > 30:
-                    product_name = product_name[:30] + "..."
-                else:
-                    # Try to get from Product model
-                    try:
-                        product_id = first_product.get('product_id')
-                        if product_id:
-                            product = Product.objects.get(pk=product_id)
-                            product_name = product.ProductName[:30] + "..." if len(product.ProductName) > 30 else product.ProductName
-                    except:
-                        pass
+        
+        try:
+            if transaction.Products:
+                products_data = transaction.Products
+                
+                if isinstance(products_data, str):
+                    import json as json_module
+                    products_data = json_module.loads(products_data)
+                
+                if isinstance(products_data, list) and len(products_data) > 0:
+                    first_product = products_data[0]
+                    
+                    if isinstance(first_product, dict):
+                        product_name = first_product.get('product_name', 'Product')
+                    elif isinstance(first_product, str):
+                        product_name = first_product
+                    else:
+                        product_name = str(first_product)
+                    
+                    if len(product_name) > 30:
+                        product_name = product_name[:30] + "..."
+        except Exception as e:
+            print(f"Error parsing product data: {e}")
+            product_name = "Product"
         
         recent_orders.append({
             'order_number': f"#TR{str(transaction.TransactionID).zfill(6)}",
             'product_name': product_name,
-            'order_date': transaction.CreatedAt.strftime('%d %B %Y'),
+            'order_date': transaction.CreatedAt.strftime('%d %b %Y'),
             'price': f"Rs. {transaction.TotalAmount:,.2f}",
             'status': transaction.Status,
             'status_class': {
@@ -202,7 +231,7 @@ def dashboard(request):
             }.get(transaction.Status, 'bg-light-secondary text-dark-secondary')
         })
     
-    # Count transactions by status
+    # ========== ORDER STATUS STATISTICS (All time) ==========
     completed_count = transactions.filter(Status='completed').count()
     pending_count = transactions.filter(Status='pending').count()
     cancelled_count = transactions.filter(Status='cancelled').count()
@@ -215,10 +244,14 @@ def dashboard(request):
         pending_percentage = (pending_count / total_transactions) * 100
         cancelled_percentage = (cancelled_count / total_transactions) * 100
     else:
-        # Handle case where there are no transactions
         completed_percentage = 0
         pending_percentage = 0
         cancelled_percentage = 0
+    
+    # Get selected month name
+    selected_month_name = next((name for num, name in months_list if num == selected_month), "Unknown")
+    
+    # ========== PREPARE CONTEXT ==========
     
     context = {
         'seller': seller,
@@ -233,11 +266,235 @@ def dashboard(request):
         'pending_percentage': pending_percentage,
         'cancelled_percentage': cancelled_percentage,
         'current_year': today.year,
-        # Add sales data as JSON string
-        'sales_chart_data_json': sales_chart_data_json,
+        'current_month': today.month,
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_month_name': selected_month_name,
+        'selected_month_earnings': selected_month_earnings,
+        'selected_month_orders': selected_month_orders,
+        'selected_month_customers': selected_month_customers,
+        'months': months_list,
+        'years_range': years_range_list,
+        'sales_chart_data_json': chart_data_json,
+        'total_transactions': total_transactions,
     }
     
     return render(request, 'SellerModule/dashboard.html', context)
+
+
+@login_required
+@seller_required
+def seller_profile(request):
+    # Get user ID from session (using 'uid' as per your logs)
+    user_id = request.session.get('uid')
+    
+    if not user_id:
+        messages.error(request, "Please login to access seller profile")
+        return redirect('login')
+    
+    try:
+        user = Users.objects.get(UserID=user_id)
+    except Users.DoesNotExist:
+        messages.error(request, "User not found")
+        return redirect('login')
+    
+    try:
+        seller = Seller.objects.get(UserId=user)
+    except Seller.DoesNotExist:
+        messages.error(request, "Seller profile not found. Please complete seller registration.")
+        return redirect('requestseller')
+    
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type', '')
+        
+        if form_type == 'personal_info':
+            return handle_personal_info(request, user)
+        elif form_type == 'store_info':
+            return handle_store_info(request, seller, user)
+        elif form_type == 'change_password':
+            return handle_password_change(request, user)
+    
+    # Get product statistics based on Stock
+    total_products = Product.objects.filter(SellerID=seller).count()
+    
+    # Active products: Stock > 0 (you can adjust threshold as needed)
+    active_products = Product.objects.filter(SellerID=seller, Stock__gt=0).count()
+    
+    # Products that need restocking (Stock <= 0)
+    low_stock_products = Product.objects.filter(SellerID=seller, Stock__lte=0).count()
+    
+    # For now, use placeholder values for orders
+    pending_orders = 0
+    completed_orders = 0
+    
+    context = {
+        'user': user,
+        'seller': seller,
+        'total_products': total_products,
+        'active_products': active_products,
+        'low_stock_products': low_stock_products,
+        'pending_orders': pending_orders,
+        'completed_orders': completed_orders,
+    }
+    
+    return render(request, 'SellerModule/seller_profile.html', context)
+
+
+# Helper functions for form handling
+def handle_personal_info(request, user):
+    """Handle personal information update"""
+    try:
+        # Get form data
+        full_name = request.POST.get('full_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        address = request.POST.get('address', '').strip()
+        
+        # Validation
+        if not all([full_name, email, phone, address]):
+            messages.error(request, "All personal information fields are required")
+            return redirect('profile-seller')
+        
+        # Email validation
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            messages.error(request, "Please enter a valid email address")
+            return redirect('profile-seller')
+        
+        # Phone validation
+        if not re.match(r'^\+?[0-9\s\-\(\)]{7,15}$', phone):
+            messages.error(request, "Please enter a valid phone number")
+            return redirect('profile-seller')
+        
+        # Check email uniqueness
+        if Users.objects.filter(Email=email).exclude(UserID=user.UserID).exists():
+            messages.error(request, "Email is already registered with another account")
+            return redirect('profile-seller')
+        
+        # Update user
+        user.FullName = full_name
+        user.Email = email
+        user.Phone = phone
+        user.Address = address
+        user.save()
+        
+        messages.success(request, "Personal information updated successfully!")
+        
+    except Exception as e:
+        messages.error(request, f"Error updating personal information: {str(e)}")
+    
+    return redirect('profile-seller')
+
+def handle_store_info(request, seller, user):
+    """Handle store information update"""
+    try:
+        # Get form data
+        store_name = request.POST.get('store_name', '').strip()
+        store_address = request.POST.get('store_address', '').strip()
+        license_number = request.POST.get('license_number', '').strip()
+        pan = request.POST.get('pan', '').strip().upper()
+        
+        # Validation
+        if not all([store_name, store_address, license_number, pan]):
+            messages.error(request, "All store information fields are required")
+            return redirect('profile-seller')
+        
+        # PAN validation
+        if not re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$', pan):
+            messages.error(request, "Please enter a valid PAN number (format: ABCDE1234F)")
+            return redirect('profile-seller')
+        
+        # Check PAN uniqueness
+        if Seller.objects.filter(PAN=pan).exclude(SellerID=seller.SellerID).exists():
+            messages.error(request, "PAN number is already registered with another seller")
+            return redirect('profile-seller')
+        
+        # Store original status for comparison
+        original_status = seller.Status
+        had_changes = False
+        
+        # Check for actual changes
+        if seller.StoreName != store_name:
+            seller.StoreName = store_name
+            had_changes = True
+        
+        if seller.StoreAddress != store_address:
+            seller.StoreAddress = store_address
+            had_changes = True
+            
+        if seller.ProductionLicenseNumber != license_number:
+            seller.ProductionLicenseNumber = license_number
+            had_changes = True
+            
+        if seller.PAN != pan:
+            seller.PAN = pan
+            had_changes = True
+        
+        # Only update if there are changes
+        if had_changes:
+            # If store was accepted and info changed, set to pending
+            if original_status == 'accepted':
+                seller.Status = 'pending'
+                messages.warning(request, "Store information updated successfully! Your store status is now 'Pending' for re-verification.")
+            else:
+                messages.success(request, "Store information updated successfully!")
+            
+            seller.save()
+        else:
+            messages.info(request, "No changes were made to store information.")
+        
+    except Exception as e:
+        messages.error(request, f"Error updating store information: {str(e)}")
+    
+    return redirect('profile-seller')
+
+def handle_password_change(request, user):
+    """Handle password change"""
+    try:
+        current_password = request.POST.get('current_password', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+        
+        # Validation
+        if not all([current_password, new_password, confirm_password]):
+            messages.error(request, "All password fields are required")
+            return redirect('profile-seller')
+        
+        # Check current password
+        if not check_password(current_password, user.Password):
+            messages.error(request, "Current password is incorrect")
+            return redirect('profile-seller')
+        
+        # Check password length
+        if len(new_password) < 6:
+            messages.error(request, "New password must be at least 6 characters long")
+            return redirect('profile-seller')
+        
+        # Check password match
+        if new_password != confirm_password:
+            messages.error(request, "New password and confirmation do not match")
+            return redirect('profile-seller')
+        
+        # Check if new password is different
+        if check_password(new_password, user.Password):
+            messages.error(request, "New password must be different from current password")
+            return redirect('profile-seller')
+        
+        # Update password
+        user.Password = make_password(new_password)
+        user.save()
+        
+        # Clear session for security
+        if 'uid' in request.session:
+            del request.session['uid']
+        request.session.flush()
+        
+        messages.success(request, "Password changed successfully! Please log in again with your new password.")
+        return redirect('login')
+        
+    except Exception as e:
+        messages.error(request, f"Error changing password: {str(e)}")
+        return redirect('profile-seller')
+
 
 # Helper function to normalize product images
 def normalize_images(product):

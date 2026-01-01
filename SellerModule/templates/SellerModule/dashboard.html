@@ -5,28 +5,27 @@
 
 {% block sellermain %}
 <section class="container">
-    <!-- row -->
+    <!-- Welcome Card -->
     <div class="row mb-8">
         <div class="col-md-12">
-            <!-- card -->
             <div class="card bg-light border-0 rounded-4"
                  style="background-image: url({% static "assets/images/slider/slider-image-1.jpg" %} ); background-repeat: no-repeat; background-size: cover; background-position: right">
                 <div class="card-body p-lg-12">
-                    <h1>Welcome back!</h1>
+                    <h1>Welcome back, {{ seller.StoreName }}!</h1>
                     <p><span class="badge bg-light text-dark fs-6 px-3 py-2">{{ seller.UserId.UserName }}</span></p>
+                    <p class="mb-0 text-light">Viewing: {{ selected_month_name }} {{ selected_year }}</p>
                 </div>
             </div>
         </div>
     </div>
-    <!-- table -->
+    
+    <!-- Stats Cards -->
     <div class="table-responsive-xl mb-6 mb-lg-0">
         <div class="row flex-nowrap pb-3 pb-lg-0">
+            <!-- Monthly Earnings (Last 30 days) -->
             <div class="col-lg-4 col-12 mb-6">
-                <!-- card -->
                 <div class="card h-100 card-lg">
-                    <!-- card body -->
                     <div class="card-body p-6">
-                        <!-- heading -->
                         <div class="d-flex justify-content-between align-items-center mb-6">
                             <div>
                                 <h4 class="mb-0 fs-5">Earnings</h4>
@@ -35,20 +34,18 @@
                                 <i class="bi bi bi-cash-coin fs-5"></i>
                             </div>
                         </div>
-                        <!-- project number -->
                         <div class="lh-1">
                             <h1 class="mb-2 fw-bold fs-2">Rs. {{ monthly_earnings|floatformat:2 }}</h1>
-                            <span>Monthly revenue</span>
+                            <span>Last 30 days</span>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Monthly Orders (Last 30 days) -->
             <div class="col-lg-4 col-12 mb-6">
-                <!-- card -->
                 <div class="card h-100 card-lg">
-                    <!-- card body -->
                     <div class="card-body p-6">
-                        <!-- heading -->
                         <div class="d-flex justify-content-between align-items-center mb-6">
                             <div>
                                 <h4 class="mb-0 fs-5">Orders</h4>
@@ -57,20 +54,18 @@
                                 <i class="bi bi-cart fs-5"></i>
                             </div>
                         </div>
-                        <!-- project number -->
                         <div class="lh-1">
                             <h1 class="mb-2 fw-bold fs-2">{{ monthly_orders }}</h1>
-                            <span>Monthly Orders</span>
+                            <span>Last 30 days</span>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Monthly Customers (Last 30 days) -->
             <div class="col-lg-4 col-12 mb-6">
-                <!-- card -->
                 <div class="card h-100 card-lg">
-                    <!-- card body -->
                     <div class="card-body p-6">
-                        <!-- heading -->
                         <div class="d-flex justify-content-between align-items-center mb-6">
                             <div>
                                 <h4 class="mb-0 fs-5">Customers</h4>
@@ -79,10 +74,9 @@
                                 <i class="bi bi-people fs-5"></i>
                             </div>
                         </div>
-                        <!-- project number -->
                         <div class="lh-1">
                             <h1 class="mb-2 fw-bold fs-2">{{ monthly_customers }}</h1>
-                            <span>Monthly Customers</span>
+                            <span>Last 30 days</span>
                         </div>
                     </div>
                 </div>
@@ -90,78 +84,99 @@
         </div>
     </div>
 
-    <!-- row -->
+    <!-- Charts Section -->
     <div class="row">
+        <!-- Revenue Chart -->
         <div class="col-xl-8 col-lg-6 col-md-12 col-12 mb-6">
-            <!-- card -->
             <div class="card h-100 card-lg">
                 <div class="card-body p-6">
-                    <!-- heading -->
-                    <div class="d-flex justify-content-between">
+                    <!-- Chart header with filters -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h3 class="mb-1 fs-5">Revenue</h3>
+                            <h3 class="mb-1 fs-5">Revenue - {{ selected_month_name }} {{ selected_year }}</h3>
                         </div>
-                        <div>
-                            <!-- select option -->
-                            <select class="form-select">
-                                <option selected>{{ current_year }}</option>
-                                <option value="{{ current_year|add:'-1' }}">{{ current_year|add:'-1' }}</option>
-                                <option value="{{ current_year|add:'-2' }}">{{ current_year|add:'-2' }}</option>
-                            </select>
+                        
+                        <!-- Date Filter Controls -->
+                        <div class="d-flex gap-2">
+                            <form method="GET" action="{% url 'seller-dashboard' %}" class="d-flex gap-2">
+                                <!-- Month Selector -->
+                                <div>
+                                    <select name="month" class="form-select form-select-sm" id="monthSelect">
+                                        {% for month_num, month_name in months %}
+                                        <option value="{{ month_num }}" {% if selected_month == month_num %}selected{% endif %}>
+                                            {{ month_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Year Selector -->
+                                <div>
+                                    <select name="year" class="form-select form-select-sm" id="yearSelect">
+                                        {% for year in years_range reversed %}
+                                        <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+
+                                <!-- Reset Button (goes to current month) -->
+                                <a href="{% url 'seller-dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-calendar-alt"></i> Current
+                                </a>
+                            </form>
                         </div>
                     </div>
                     
-                    <!-- chart -->
-                    <div id="revenueChart" class="mt-6"></div>
-
-                    <!-- Embed sales data in a script tag - THIS IS THE KEY -->
+                    <!-- Selected month info -->
+                    <div class="mb-3">
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Showing data for {{ selected_month_name }} {{ selected_year }}
+                            {% if selected_month_earnings > 0 %}
+                                | <span class="text-success">Sales: Rs. {{ selected_month_earnings|floatformat:2 }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- Chart -->
+                    <div id="revenueChart"></div>
+                    
+                    <!-- Chart Data -->
                     <script type="application/json" id="salesChartData">
                         {{ sales_chart_data_json|safe }}
                     </script>
                     
-                        <!-- TEMPORARY DEBUG - REMOVE AFTER TESTING -->
-                        <div style="display: none;" id="debugInfo">
-                            <h4>Debug Information</h4>
-                            <p>sales_chart_data_json exists: {{ sales_chart_data_json|yesno:"Yes,No" }}</p>
-                            <p>Length: {{ sales_chart_data_json|length }}</p>
-                            <pre id="debugJson">{{ sales_chart_data_json|default:"No data" }}</pre>
-                        </div>
-
-<script>
-    // Debug script
-    console.log("=== TEMPLATE DEBUG ===");
-    console.log("sales_chart_data_json in template:", "{{ sales_chart_data_json }}");
-    
-    // Check if the variable exists
-    const debugJson = document.getElementById('debugJson').textContent;
-    console.log("Raw JSON from template:", debugJson);
-    
-    if (debugJson && debugJson !== "No data") {
-        try {
-            const parsed = JSON.parse(debugJson);
-            console.log("Successfully parsed JSON:", parsed);
-        } catch (e) {
-            console.error("JSON parse error:", e.message);
-        }
-    }
-</script>
+                    <!-- Month Total -->
+                    <div class="mt-4 text-center">
+                        <h5 class="text-muted">
+                            Total for {{ selected_month_name }} {{ selected_year }}: 
+                            <span class="fw-bold text-dark">Rs. {{ selected_month_earnings|floatformat:2 }}</span>
+                        </h5>
+                        <p class="small text-muted mt-1">
+                            {{ selected_month_orders }} orders from {{ selected_month_customers }} customer{{ selected_month_customers|pluralize }}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-
+    
+        <!-- Order Status Chart -->
         <div class="col-xl-4 col-lg-6 col-12 mb-6">
-            <!-- card -->
             <div class="card h-100 card-lg">
-                <!-- card body -->
                 <div class="card-body p-6">
-                    <!-- heading -->
-                    <h3 class="mb-0 fs-5">Total Sales</h3>
+                    <h3 class="mb-0 fs-5">Order Status (All Time)</h3>
                     <div id="totalSale" class="mt-6 d-flex justify-content-center"></div>
                     <div class="mt-4">
-                        <!-- list -->
                         <ul class="list-unstyled mb-0">
                             <li class="mb-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-primary" viewBox="0 0 16 16">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="currentColor" class="bi bi-circle-fill text-success" viewBox="0 0 16 16">
                                     <circle cx="8" cy="8" r="8" />
                                 </svg>
                                 <span class="ms-1">
@@ -188,233 +203,249 @@
                                 </span>
                             </li>
                         </ul>
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Total Transactions</span>
+                                <span class="fw-bold">{{ total_transactions }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-      <!-- row -->
-      <div class="row">
-          <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
-              <!-- card -->
-              <div class="card h-100 card-lg">
-                  <!-- card body -->
-                  <div class="card-body p-6">
-                      <h3 class="mb-0 fs-5">Sales Overview</h3>
-                      <div class="mt-6">
-                          <!-- Total Earnings -->
-                          <div class="mb-5">
-                              <div class="d-flex align-items-center justify-content-between">
-                                  <h5 class="fs-6">Monthly Earnings</h5>
-                                  <span>
-                                      <span class="me-1 text-dark">Rs. {{ monthly_earnings|floatformat:2 }}</span>
-                                      {% if monthly_earnings > 0 %}
-                                          (Last 30 days)
-                                      {% else %}
-                                          (No earnings yet)
-                                      {% endif %}
-                                  </span>
-                              </div>
-                              <!-- main wrapper -->
-                              <div>
-                                  <!-- progressbar -->
-                                  <div class="progress bg-light-primary" style="height: 6px">
-                                      {% if monthly_earnings > 0 %}
-                                      <div
-                                          class="progress-bar bg-primary"
-                                          role="progressbar"
-                                          aria-label="Monthly Earnings"
-                                          style="width: 100%"
-                                          aria-valuenow="100"
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"></div>
-                                      {% else %}
-                                      <div
-                                          class="progress-bar bg-secondary"
-                                          role="progressbar"
-                                          aria-label="No Earnings"
-                                          style="width: 0%"
-                                          aria-valuenow="0"
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"></div>
-                                      {% endif %}
-                                  </div>
-                              </div>
-                          </div>
-                          
-                          <!-- Total Orders -->
-                          <div class="mb-5">
-                              <div class="d-flex align-items-center justify-content-between">
-                                  <h5 class="fs-6">Monthly Orders</h5>
-                                  <span>
-                                      <span class="me-1 text-dark">{{ monthly_orders }}</span>
-                                      orders
-                                  </span>
-                              </div>
-                              <div>
-                                  <!-- progressbar -->
-                                  <div class="progress bg-info-soft" style="height: 6px">
-                                      {% if monthly_orders > 0 %}
-                                      <div
-                                          class="progress-bar bg-info"
-                                          role="progressbar"
-                                          aria-label="Monthly Orders"
-                                          style="width: {% widthratio monthly_orders 50 100 %}%"
-                                          aria-valuenow="{{ monthly_orders }}"
-                                          aria-valuemin="0"
-                                          aria-valuemax="50"></div>
-                                      {% else %}
-                                      <div
-                                          class="progress-bar bg-secondary"
-                                          role="progressbar"
-                                          aria-label="No Orders"
-                                          style="width: 0%"
-                                          aria-valuenow="0"
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"></div>
-                                      {% endif %}
-                                  </div>
-                              </div>
-                          </div>
-                          
-                          <!-- Customer Growth -->
-                          <div>
-                              <div class="d-flex align-items-center justify-content-between">
-                                  <h5 class="fs-6">Monthly Customers</h5>
-                                  <span>
-                                      <span class="me-1 text-dark">{{ monthly_customers }}</span>
-                                      customers
-                                  </span>
-                              </div>
-                              <div>
-                                  <!-- progressbar -->
-                                  <div class="progress bg-light-success" style="height: 6px">
-                                      {% if monthly_customers > 0 %}
-                                      <div
-                                          class="progress-bar bg-success"
-                                          role="progressbar"
-                                          aria-label="Monthly Customers"
-                                          style="width: {% widthratio monthly_customers 20 100 %}%"
-                                          aria-valuenow="{{ monthly_customers }}"
-                                          aria-valuemin="0"
-                                          aria-valuemax="20"></div>
-                                      {% else %}
-                                      <div
-                                          class="progress-bar bg-secondary"
-                                          role="progressbar"
-                                          aria-label="No Customers"
-                                          style="width: 0%"
-                                          aria-valuenow="0"
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"></div>
-                                      {% endif %}
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          
-          <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
-              <div class="position-relative h-100">
-                  <!-- Notification Card -->
-                  <div class="card card-lg mb-6">
-                      <!-- card body -->
-                      <div class="card-body px-6 py-8">
-                          <div class="d-flex align-items-center">
-                              <div>
-                                  <!-- svg -->
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-bell text-warning" viewBox="0 0 16 16">
-                                      <path
-                                          d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z" />
-                                  </svg>
-                              </div>
-                              <!-- text -->
-                              <div class="ms-4">
-                                  <h5 class="mb-1">Recent Activity</h5>
-                                  <p class="mb-0">
-                                      You have 
-                                      {% if recent_orders|length > 0 %}
-                                          <a class="link-info" href="#recent-orders">{{ recent_orders|length }} recent order{{ recent_orders|length|pluralize }}</a>
-                                      {% else %}
-                                          <span class="text-muted">no recent orders</span>
-                                      {% endif %}
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <!-- Performance Card -->
-                  <div class="card card-lg">
-                      <!-- card body -->
-                      <div class="card-body px-6 py-8">
-                          <div class="d-flex align-items-center">
-                              <!-- svg -->
-                              <div>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-lightbulb text-success" viewBox="0 0 16 16">
-                                      <path
-                                          d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z" />
-                                  </svg>
-                              </div>
-                              <!-- text -->
-                              <div class="ms-4">
-                                  <h5 class="mb-1">Performance Summary</h5>
-                                  <p class="mb-0">
-                                      {% if completed_count > 0 %}
-                                          <span class="text-success">{{ completed_percentage|floatformat:0 }}% orders completed</span>
-                                      {% else %}
-                                          <span class="text-muted">No completed orders yet</span>
-                                      {% endif %}
-                                  </p>
-                                  <p class="mb-0 small text-muted mt-1">
-                                      Total: {{ completed_count|add:pending_count|add:cancelled_count }} transaction{{ completed_count|add:pending_count|add:cancelled_count|pluralize }}
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
-
-    <!-- row -->
+    <!-- Sales Overview Section -->
     <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
+            <!-- Sales Overview Card -->
+            <div class="card h-100 card-lg">
+                <div class="card-body p-6">
+                    <h3 class="mb-0 fs-5">Sales Overview</h3>
+                    <div class="mt-6">
+                        <!-- Monthly Earnings (Last 30 days) -->
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fs-6">Monthly Earnings</h5>
+                                <span>
+                                    <span class="me-1 text-dark fw-bold">Rs. {{ monthly_earnings|floatformat:2 }}</span>
+                                    {% if monthly_earnings > 0 %}
+                                        <span class="text-muted small">(Last 30 days)</span>
+                                    {% else %}
+                                        <span class="text-muted small">(No earnings yet)</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div>
+                                <div class="progress bg-light-primary" style="height: 8px">
+                                    {% if monthly_earnings > 0 %}
+                                    {% widthratio monthly_earnings 100000 100 as earnings_percentage %}
+                                    <div class="progress-bar bg-primary" role="progressbar"
+                                         style="width: {% if earnings_percentage > 100 %}100{% else %}{{ earnings_percentage }}{% endif %}%"
+                                         aria-valuenow="{{ earnings_percentage }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% else %}
+                                    <div class="progress-bar bg-secondary" role="progressbar"
+                                         style="width: 0%"
+                                         aria-valuenow="0"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">Rs. 0</small>
+                                    <small class="text-muted">Target: Rs. 100,000</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monthly Orders (Last 30 days) -->
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fs-6">Monthly Orders</h5>
+                                <span>
+                                    <span class="me-1 text-dark fw-bold">{{ monthly_orders }}</span>
+                                    <span class="text-muted small">orders</span>
+                                </span>
+                            </div>
+                            <div>
+                                <div class="progress bg-info-soft" style="height: 8px">
+                                    {% if monthly_orders > 0 %}
+                                    {% widthratio monthly_orders 50 100 as orders_percentage %}
+                                    <div class="progress-bar bg-info" role="progressbar"
+                                         style="width: {% if orders_percentage > 100 %}100{% else %}{{ orders_percentage }}{% endif %}%"
+                                         aria-valuenow="{{ orders_percentage }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% else %}
+                                    <div class="progress-bar bg-secondary" role="progressbar"
+                                         style="width: 0%"
+                                         aria-valuenow="0"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">0 orders</small>
+                                    <small class="text-muted">Target: 50 orders</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monthly Customers (Last 30 days) -->
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="fs-6">Monthly Customers</h5>
+                                <span>
+                                    <span class="me-1 text-dark fw-bold">{{ monthly_customers }}</span>
+                                    <span class="text-muted small">customers</span>
+                                </span>
+                            </div>
+                            <div>
+                                <div class="progress bg-light-success" style="height: 8px">
+                                    {% if monthly_customers > 0 %}
+                                    {% widthratio monthly_customers 20 100 as customers_percentage %}
+                                    <div class="progress-bar bg-success" role="progressbar"
+                                         style="width: {% if customers_percentage > 100 %}100{% else %}{{ customers_percentage }}{% endif %}%"
+                                         aria-valuenow="{{ customers_percentage }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% else %}
+                                    <div class="progress-bar bg-secondary" role="progressbar"
+                                         style="width: 0%"
+                                         aria-valuenow="0"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"></div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">0 customers</small>
+                                    <small class="text-muted">Target: 20 customers</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notifications & Performance -->
+        <div class="col-xl-6 col-lg-6 col-md-12 col-12 mb-6">
+            <div class="position-relative h-100">
+                <!-- Recent Activity Card -->
+                <div class="card card-lg mb-6">
+                    <div class="card-body px-6 py-8">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" 
+                                     class="bi bi-bell text-warning" viewBox="0 0 16 16">
+                                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                                </svg>
+                            </div>
+                            <div class="ms-4">
+                                <h5 class="mb-1">Recent Activity</h5>
+                                <p class="mb-0">
+                                    You have 
+                                    {% if recent_orders|length > 0 %}
+                                        <a class="link-info" href="#recent-orders">{{ recent_orders|length }} recent order{{ recent_orders|length|pluralize }}</a>
+                                    {% else %}
+                                        <span class="text-muted">no recent orders</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-0 small text-muted mt-1">
+                                    <i class="bi bi-clock me-1"></i>Updated just now
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Summary Card -->
+                <div class="card card-lg">
+                    <div class="card-body px-6 py-8">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" 
+                                     class="bi bi-lightbulb text-success" viewBox="0 0 16 16">
+                                    <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a1.964 1.964 0 0 0-.453-.618A5.984 5.984 0 0 1 2 6zm6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1z"/>
+                                </svg>
+                            </div>
+                            <div class="ms-4">
+                                <h5 class="mb-1">Performance Summary</h5>
+                                <p class="mb-0">
+                                    {% if completed_count > 0 %}
+                                        <span class="text-success fw-bold">{{ completed_percentage|floatformat:0 }}%</span> orders completed
+                                    {% else %}
+                                        <span class="text-muted">No completed orders yet</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-0 small text-muted mt-1">
+                                    <i class="bi bi-bar-chart me-1"></i>
+                                    Total: {{ total_transactions }} transaction{{ total_transactions|pluralize }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="row" id="recent-orders">
         <div class="col-xl-12 col-lg-12 col-md-12 col-12 mb-6">
             <div class="card h-100 card-lg">
-                <!-- heading -->
                 <div class="p-6">
-                    <h3 class="mb-0 fs-5">Recent Orders</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0 fs-5">Recent Orders</h3>
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            View All Orders <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body p-0">
-                    <!-- table -->
                     <div class="table-responsive">
                         <table class="table table-centered table-borderless text-nowrap table-hover">
                             <thead class="bg-light">
                                 <tr>
-                                    <th scope="col">Order Number</th>
+                                    <th scope="col" class="ps-6">Order Number</th>
                                     <th scope="col">Product Name</th>
                                     <th scope="col">Order Date</th>
                                     <th scope="col">Price</th>
-                                    <th scope="col">Status</th>
+                                    <th scope="col" class="pe-6">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for order in recent_orders %}
                                 <tr>
-                                    <td>{{ order.order_number }}</td>
+                                    <td class="ps-6">
+                                        <a href="#" class="text-decoration-none text-dark fw-medium">
+                                            {{ order.order_number }}
+                                        </a>
+                                    </td>
                                     <td>{{ order.product_name }}</td>
                                     <td>{{ order.order_date }}</td>
-                                    <td>{{ order.price }}</td>
-                                    <td>
-                                        <span class="badge {{ order.status_class }}">{{ order.status|title }}</span>
+                                    <td class="fw-bold">{{ order.price }}</td>
+                                    <td class="pe-6">
+                                        <span class="badge {{ order.status_class }} px-3 py-2">
+                                            <i class="bi {% if order.status == 'completed' %}bi-check-circle
+                                                       {% elif order.status == 'pending' %}bi-clock
+                                                       {% elif order.status == 'cancelled' %}bi-x-circle
+                                                       {% else %}bi-circle{% endif %} me-1"></i>
+                                            {{ order.status|title }}
+                                        </span>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">No orders found</td>
+                                    <td colspan="5" class="text-center py-8">
+                                        <div class="py-4">
+                                            <i class="bi bi-cart-x display-1 text-muted"></i>
+                                            <h5 class="mt-3">No orders found</h5>
+                                            <p class="text-muted">Start selling to see your orders here</p>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

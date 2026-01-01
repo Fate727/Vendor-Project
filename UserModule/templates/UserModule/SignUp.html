@@ -1,82 +1,233 @@
 {% extends 'base.html' %}
-
 {% load static %}
-
 
 {% block title %}SignUp Page{% endblock %}
 
-
 {% block main %}
-
-
 <main>
-         <!-- section -->
+    <section class="my-lg-14 my-8">
+        <div class="container">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-12 col-md-6 col-lg-4 order-lg-1 order-2">
+                    <img src="{% static '/assets/images/svg-graphics/signup-g.svg' %}" alt="" class="img-fluid" />
+                </div>
 
-         <section class="my-lg-14 my-8">
-            <!-- container -->
-            <div class="container">
-               <!-- row -->
-               <div class="row justify-content-center align-items-center">
-                  <div class="col-12 col-md-6 col-lg-4 order-lg-1 order-2">
-                     <!-- img -->
-                     <img src="{% static "/assets/images/svg-graphics/signup-g.svg" %} " alt="" class="img-fluid" />
-                  </div>
-                  <!-- col -->
-                  <div class="col-12 col-md-6 offset-lg-1 col-lg-4 order-lg-2 order-1">
-                     <div class="mb-lg-9 mb-5">
+                <div class="col-12 col-md-6 offset-lg-1 col-lg-4 order-lg-2 order-1">
+                    <div class="mb-lg-9 mb-5">
                         <h1 class="mb-1 h2 fw-bold">Get Start Shopping</h1>
-                        <p>Welcome to FreshCart! Enter your email to get started.</p>
-                     </div>
-                     <!-- form -->
-                     <form class="needs-validation" novalidate>
-                        <div class="row g-3">
-                           <!-- col -->
-                           <div class="col">
-                              <!-- input -->
-                              <label for="formSignupfname" class="form-label visually-hidden">First Name</label>
-                              <input type="text" class="form-control" id="formSignupfname" placeholder="First Name" required />
-                              <div class="invalid-feedback">Please enter first name.</div>
-                           </div>
-                           <div class="col">
-                              <!-- input -->
-                              <label for="formSignuplname" class="form-label visually-hidden">Last Name</label>
-                              <input type="text" class="form-control" id="formSignuplname" placeholder="First Name" required />
-                              <div class="invalid-feedback">Please enter last name.</div>
-                           </div>
-                           <div class="col-12">
-                              <!-- input -->
-                              <label for="formSignupEmail" class="form-label visually-hidden">Email address</label>
-                              <input type="email" class="form-control" id="formSignupEmail" placeholder="Email" required />
-                              <div class="invalid-feedback">Please enter email.</div>
-                           </div>
-                           <div class="col-12">
-                              <div class="password-field position-relative">
-                                 <label for="formSignupPassword" class="form-label visually-hidden">Password</label>
-                                 <div class="password-field position-relative">
-                                    <input type="password" class="form-control fakePassword" id="formSignupPassword" placeholder="*****" required />
-                                    <span><i class="bi bi-eye-slash passwordToggler"></i></span>
-                                    <div class="invalid-feedback">Please enter password.</div>
-                                 </div>
-                              </div>
-                           </div>
-                           <!-- btn -->
-                           <div class="col-12 d-grid"><button type="submit" class="btn btn-primary">Register</button></div>
+                        <p>Welcome to FreshCart! Create your account to get started.</p>
+                    </div>
 
-                           <!-- text -->
-                           <p>
-                              <small>
-                                 By continuing, you agree to our
-                                 <a href="#!">Terms of Service</a>
-                                 &
-                                 <a href="#!">Privacy Policy</a>
-                              </small>
-                           </p>
+                    {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert 
+                            {% if message.tags == 'success' %}alert-success
+                            {% elif message.tags == 'error' %}alert-danger
+                            {% elif message.tags == 'warning' %}alert-warning
+                            {% else %}alert-info{% endif %} py-2">
+                            {{ message }}
                         </div>
-                     </form>
-                  </div>
-               </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Signup Form -->
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Full Name -->
+                            <div class="col-12">
+                                <label for="fullname" class="form-label">Full Name</label>
+                                <input type="text" name="fullname" class="form-control" id="fullname" 
+                                       placeholder="Enter your full name" required maxlength="100"
+                                       value="{{ form_data.fullname|default:'' }}">
+                                <div class="invalid-feedback">Please enter your full name.</div>
+                            </div>
+
+                            <!-- Username -->
+                            <div class="col-12">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" id="username" 
+                                       placeholder="Choose a username" required maxlength="50"
+                                       value="{{ form_data.username|default:'' }}">
+                                <div class="invalid-feedback">Please enter a username (max 50 characters).</div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-12">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" id="email" 
+                                       placeholder="Enter your email" required
+                                       value="{{ form_data.email|default:'' }}">
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="col-12">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control" id="phone" 
+                                       placeholder="Enter your phone number" required maxlength="15"
+                                       value="{{ form_data.phone|default:'' }}">
+                                <div class="invalid-feedback">Please enter a valid phone number.</div>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="col-12">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea name="address" class="form-control" id="address" 
+                                          placeholder="Enter your address" required maxlength="255"
+                                          rows="2">{{ form_data.address|default:'' }}</textarea>
+                                <div class="invalid-feedback">Please enter your address.</div>
+                            </div>
+
+                            <!-- Password -->
+                            <div class="col-12">
+                                <div class="password-field position-relative">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" name="password" class="form-control" id="password" 
+                                           placeholder="Enter password (min 6 characters)" required minlength="6">
+                                    <span><i class="bi bi-eye-slash passwordToggler"></i></span>
+                                    <div class="invalid-feedback">Password must be at least 6 characters.</div>
+                                </div>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="col-12">
+                                <div class="password-field position-relative">
+                                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                                    <input type="password" name="confirm_password" class="form-control" 
+                                           id="confirm_password" placeholder="Confirm your password" required>
+                                    <span><i class="bi bi-eye-slash passwordToggler"></i></span>
+                                    <div class="invalid-feedback">Passwords must match.</div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden field for role (always 'basic') -->
+                            <input type="hidden" name="role" value="basic">
+
+                            <!-- Submit Button -->
+                            <div class="col-12 d-grid">
+                                <button type="submit" class="btn btn-primary">Create Account</button>
+                            </div>
+
+                            <!-- Terms and Sign In Link -->
+                            <div class="col-12">
+                                <p class="small mb-2">
+                                    By registering, you agree to our
+                                    <a href="#!">Terms of Service</a>
+                                    &
+                                    <a href="#!">Privacy Policy</a>
+                                </p>
+                                <p class="mb-0">
+                                    Already have an account? 
+                                    <a href="{% url 'SignIn-index' %}">Sign In</a>
+                                </p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-         </section>
+        </div>
+    </section>
 </main>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Password visibility toggle
+    $('.passwordToggler').click(function() {
+        const input = $(this).parent().prev();
+        const icon = $(this);
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('bi-eye-slash').addClass('bi-eye');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('bi-eye').addClass('bi-eye-slash');
+        }
+    });
+
+    // Real-time validation
+    const fields = [
+        { id: '#fullname', max: 100 },
+        { id: '#username', max: 50 },
+        { id: '#phone', max: 15 },
+        { id: '#address', max: 255 }
+    ];
+
+    fields.forEach(field => {
+        $(field.id).on('input', function() {
+            validateField($(this), field.max);
+        });
+    });
+
+    // Email validation
+    $('#email').on('input', function() {
+        const email = $(this).val().trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (email === '' || !emailRegex.test(email)) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    // Password validation
+    $('#password').on('input', function() {
+        const password = $(this).val().trim();
+        if (password.length < 6) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    // Confirm password validation
+    $('#confirm_password').on('input', function() {
+        const confirmPass = $(this).val().trim();
+        const password = $('#password').val().trim();
+        
+        if (confirmPass === '' || confirmPass !== password) {
+            $(this).addClass('is-invalid').removeClass('is-valid');
+        } else {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        }
+    });
+
+    function validateField(element, maxLength) {
+        const value = element.val().trim();
+        if (value === '' || value.length > maxLength) {
+            element.addClass('is-invalid').removeClass('is-valid');
+        } else {
+            element.removeClass('is-invalid').addClass('is-valid');
+        }
+    }
+
+    // Form submission validation
+    $('form').submit(function(e) {
+        let isValid = true;
+        
+        // Check all required fields
+        $(this).find('input[required], textarea[required]').each(function() {
+            if (!$(this).val().trim()) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            }
+        });
+
+        // Check password match
+        if ($('#password').val() !== $('#confirm_password').val()) {
+            $('#confirm_password').addClass('is-invalid');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill all required fields correctly.');
+        }
+    });
+});
+</script>
 
 {% endblock %}
