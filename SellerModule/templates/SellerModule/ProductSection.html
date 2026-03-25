@@ -124,18 +124,21 @@
             .then(data => {
                 tbody.innerHTML = data.html || '';
                 paginationWrapper.innerHTML = data.pagination || '';
-
-                paginationWrapper.querySelectorAll('a.page-link').forEach(link => {
-                    link.addEventListener('click', function(e){
-                        e.preventDefault();
-                        const pageNum = this.getAttribute('href').split('page=')[1];
-                        updateTable(searchBox.value.trim(), statusSelect.value, pageNum);
-                    });
-                });
             })
             .catch(err => { if (err.name !== 'AbortError') console.error(err); })
             .finally(() => setLoading(false));
     }
+
+    // Event delegation for pagination links
+    document.addEventListener('click', function(e){
+        if (e.target.classList.contains('page-link') && e.target.closest('#pagination-wrapper')) {
+            e.preventDefault();
+            const pageNum = e.target.getAttribute('data-page');
+            if (pageNum) {
+                updateTable(searchBox.value.trim(), statusSelect.value, pageNum);
+            }
+        }
+    });
 
     function triggerUpdate(){
         updateTable(searchBox.value.trim(), statusSelect.value, 1);

@@ -20,7 +20,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 @role_based_redirect
 def index(request):
     categories = Category.objects.filter(status='active')
-    products = Product.objects.filter(Category__status='active')[:8]
+    products = Product.objects.filter(Category__status='active')[:10]
     return render(request, 'UserModule/Home.html', {
         'categories': categories,
         'products': products
@@ -53,10 +53,11 @@ def Shop(request):
         selected_tags = request.GET.getlist('tags')
         search_query = request.GET.get('search', '').strip()
         
-        # Handle single tag from URL parameter
-        if 'tag' in request.GET and not selected_tags:
+        # Handle single tag from URL parameter - Add to existing tags
+        if 'tag' in request.GET:
             tag = request.GET.get('tag')
-            selected_tags = [tag]
+            if tag not in selected_tags:
+                selected_tags.append(tag)
 
     # Apply filters
     if selected_categories:
@@ -74,11 +75,7 @@ def Shop(request):
     if search_query:
         products = products.filter(ProductName__icontains=search_query)
     
-    # Apply Sorting
-    # Note: For JSON field sorting, we need to annotate first
-    # For now, we'll use list sorting for price sorting
-    # For date sorting, we can use database sorting
-    
+
     if sort_by == 'newest':
         products = products.order_by('-CreatedAt')
     elif sort_by == 'oldest':
@@ -112,12 +109,6 @@ def Shop(request):
             int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
         ]
         filtered_tags = all_tags.filter(CategoryID__in=selected_categories_int)
-    
-    elif request.method == "GET" and 'tag' in request.GET and not selected_categories:
-        tag = request.GET.get('tag')
-        tag_obj = Tag.objects.filter(Name=tag).first()
-        if tag_obj:
-            filtered_tags = all_tags.filter(CategoryID=tag_obj.CategoryID)
 
     # Pagination
     # Check if products is a list or queryset
@@ -512,20 +503,15 @@ def remove_cart_item(request):
 @transaction.atomic
 def checkout(request):
     if request.method == "POST":
-
-        # 1️⃣ Check session UID
         session_uid = request.session.get('uid')
         if not session_uid:
             messages.error(request, "Please login first to proceed with checkout.")
             return redirect("login")
-
-        # 2️⃣ Fetch user
         try:
             user = Users.objects.get(UserID=session_uid)
-
-            # 2a️⃣ Role check
+            
             if user.Role == "basic":
-                pass  # allow ordering
+                pass
             elif user.Role == "seller":
                 messages.warning(request, "Sellers cannot place orders.")
                 return redirect("seller-dashboard")
@@ -536,10 +522,8 @@ def checkout(request):
             messages.error(request, "User not found. Please login again.")
             return redirect("login")
 
-        # 3️⃣ Payment method
         payment_method = request.POST.get("payment", "Cash")
 
-        # 4️⃣ Fetch active cart items
         cart_items = Cart.objects.filter(UserID=user, Status="active").select_related('ProductID')
         if not cart_items.exists():
             messages.error(request, "Your cart is empty.")
@@ -548,7 +532,6 @@ def checkout(request):
         out_of_stock_items = []
         successful_transactions = 0
 
-        # 5️⃣ Process cart items & create separate transaction for each product
         for item in cart_items:
             product = item.ProductID
 
@@ -596,7 +579,6 @@ def checkout(request):
         # 7️⃣ Deactivate cart items (only after successful processing)
         cart_items.update(Status="inactive")
 
-        # 8️⃣ Success message
         if out_of_stock_items:
             messages.success(
                 request, 
@@ -608,7 +590,6 @@ def checkout(request):
 
         return redirect("Cart")
 
-    # GET or other methods
     messages.error(request, "Invalid request method.")
     return redirect("Cart")
 

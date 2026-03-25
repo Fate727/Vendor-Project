@@ -1,3 +1,5 @@
+<span>Showing {{ products.start_index }} - {{ products.end_index }} of {{ products.paginator.count }} results</span>
+
 <ul class="pagination mb-0">
     {% if products.has_previous %}
         <li class="page-item">
@@ -9,7 +11,7 @@
 
     {% for num in products.paginator.page_range %}
         {% if products.number == num %}
-            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            <li class="page-item active"><a class="page-link" href="#" data-page="{{ num }}">{{ num }}</a></li>
         {% else %}
             <li class="page-item"><a class="page-link" href="#" data-page="{{ num }}">{{ num }}</a></li>
         {% endif %}

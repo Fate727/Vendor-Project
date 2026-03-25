@@ -2,5 +2,7 @@
     "python-envs.pythonProjects": [],
     "python.analysis.extraPaths": [
         "./utils"
-    ]
+    ],
+    "python.defaultInterpreterPath": "./venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true
 }

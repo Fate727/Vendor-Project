@@ -46,39 +46,43 @@
          <!-- Category Section Start-->
          <section class="mb-lg-10 mt-lg-14 my-8">
             <div class="container">
-               <div class="row">
-                  <div class="col-12 mb-6">
-                     <h3 class="mb-0">Featured Categories</h3>
+                  <div class="row">
+                     <div class="col-12 mb-6">
+                        <h3 class="mb-0">Featured Categories</h3>
+                     </div>
                   </div>
-               </div>
-               <div class="category-slider">
-                   {% for category in categories %}
-                   <div class="item">
-                       <a href="#" class="text-decoration-none text-inherit">
-                           <div class="card card-product mb-lg-4 border-0 shadow-sm">
-                               <div class="card-body text-center py-4">
-                                   <div class="mb-3">
-                                       {% if category.image %}
-                                       <img src="{{ category.image.url }}" alt="{{ category.name }}" 
-                                            class="rounded-circle mb-2" 
-                                            style="width: 60px; height: 60px; object-fit: cover;" />
-                                       {% else %}
-                                       <img src="/static/assets/images/category/default-category.jpg" alt="{{ category.name }}" 
-                                            class="rounded-circle mb-2" 
-                                            style="width: 60px; height: 60px; object-fit: cover;" />
-                                       {% endif %}
-                                   </div>
-                                   <div class="text-truncate fw-medium">{{ category.name }}</div>
-                               </div>
-                           </div>
-                       </a>
-                   </div>
-                   {% empty %}
-                   <div class="col-12 text-center">
-                       <p>No categories found.</p>
-                   </div>
-                   {% endfor %}
-               </div>
+                     <div class="category-slider">
+
+                      {% for category in categories %}
+                        <div class="item">
+                          <a href="{% url 'Shop-index' %}?categories={{ category.category_id }}" 
+                             class="text-decoration-none text-inherit">
+                              <div class="card card-product mb-lg-4 border-0 shadow-sm">
+                                  <div class="card-body text-center py-4">
+                                      <div class="mb-3">
+                                          {% if category.image %}
+                                          <img src="{{ category.image.url }}" alt="{{ category.name }}" 
+                                               class="rounded-circle mb-2" 
+                                               style="width: 60px; height: 60px; object-fit: cover;" />
+                                          {% else %}
+                                          <img src="/static/assets/images/category/default-category.jpg" alt="{{ category.name }}" 
+                                               class="rounded-circle mb-2" 
+                                               style="width: 60px; height: 60px; object-fit: cover;" />
+                                          {% endif %}
+                                      </div>
+                                      <div class="text-truncate fw-medium">{{ category.name }}</div>
+                                  </div>
+                              </div>
+                          </a>
+                        </div>
+                      {% empty %}
+
+                        <div class="col-12 text-center">
+                            <p>No categories found.</p>
+                        </div>
+                       {% endfor %}
+
+                     </div>
             </div>
          </section>
 
@@ -120,76 +124,103 @@
             </div>
          </section>
 
-
-        <!-- Popular Products Start-->
-        <section class="my-lg-14 my-8">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 mb-6">
-                        <h3 class="mb-0">Popular Products</h3>
-                    </div>
-                </div>
-            
-                <div class="row g-4 row-cols-lg-5 row-cols-2 row-cols-md-3">
-                    {% for product in products %}
-                        <div class="col">
-                            <div class="card card-product">
-                                <div class="card-body">
-                                    <div class="text-center position-relative">
-                                        <a href="#">
-                                            {% if product.Images %}
-                                            <img src="/media/{{ product.Images.0 }}" alt="{{ product.ProductName }}" class="mb-3 img-fluid" style="width: 300px; height: 220px; object-fit: cover; border-radius: 4px;" />
-                                            {% else %}
-                                            <img src="{% static 'assets/images/products/default.jpg' %}" alt="{{ product.ProductName }}" class="mb-3 img-fluid" />
-                                            {% endif %}
-                                        </a>
-
-                                        <div class="card-product-action">
-                                            <a href="#!" class="btn-action quick-view-btn" data-bs-toggle="modal" data-bs-target="#quickViewModal" data-product-id="{{ product.ProductID }}">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-small mb-1">
-                                        {% if product.Category %}
-                                        <a href="#!" class="text-decoration-none text-muted"><small>{{ product.Category.name }}</small></a>
-                                        {% endif %}
-                                    </div>
-
-                                    <h2 class="fs-6">
-                                        <a href="#" class="text-inherit text-decoration-none">{{ product.ProductName }}</a>
-                                    </h2>
-
-                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <div>
-                                            {% if product.Units %}
-                                            <span class="text-dark">Rs{{ product.Units.0.price }}</span>
-                                            {% endif %}
-                                        </div>
-
-                                        <div>
-                                            <input type="hidden" class="selected-unit-unit" value="{{ product.Units.0.unit }}">
-                                            <input type="hidden" class="selected-unit-amount" value="{{ product.Units.0.quantities }}">
-                                            <input type="hidden" class="selected-unit-price" value="{{ product.Units.0.price }}">
-                                            <button class="btn btn-primary btn-sm add-to-cart-btn" data-product-id="{{ product.ProductID }}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus">
-                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                </svg>
-                                                Add
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <p class="text-center py-4">No products available.</p>
-                        {% endfor %}
-                </div>
-            </div>
-        </section>
+         <!-- Popular Products Start-->
+         <section class="my-lg-14 my-8">
+             <div class="container">
+                 <div class="row align-items-center mb-6">
+                     <div class="col-6">
+                         <h3 class="mb-0">Popular Products</h3>
+                     </div>
+                     <div class="col-6 text-end">
+                         <a href="{% url 'Shop-index' %}" class="text-decoration-none fw-semibold">
+                             View All →
+                         </a>
+                     </div>
+                 </div>
+              
+                 <div class="row g-4 row-cols-lg-5 row-cols-2 row-cols-md-3">
+                     {% for product in products %}
+                         <div class="col">
+                             <div class="card card-product">
+                                 <div class="card-body">
+                                     <div class="text-center position-relative">
+                                         <a href="#">
+                                             {% if product.Images %}
+                                                 <img src="/media/{{ product.Images.0 }}"
+                                                      alt="{{ product.ProductName }}"
+                                                      class="mb-3 img-fluid"
+                                                      style="width: 300px; height: 220px; object-fit: cover; border-radius: 4px;" />
+                                             {% else %}
+                                                 <img src="{% static 'assets/images/products/default.jpg' %}"
+                                                      alt="{{ product.ProductName }}"
+                                                      class="mb-3 img-fluid" />
+                                             {% endif %}
+                                         </a>
+                                      
+                                         <div class="card-product-action">
+                                             <a href="#!"
+                                                class="btn-action quick-view-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#quickViewModal"
+                                                data-product-id="{{ product.ProductID }}">
+                                                 <i class="bi bi-eye"></i>
+                                             </a>
+                                         </div>
+                                     </div>
+                                  
+                                     <div class="text-small mb-1">
+                                         {% if product.Category %}
+                                             <a href="#!" class="text-decoration-none text-muted">
+                                                 <small>{{ product.Category.name }}</small>
+                                             </a>
+                                         {% endif %}
+                                     </div>
+                                  
+                                     <h2 class="fs-6">
+                                         <a href="#" class="text-inherit text-decoration-none">
+                                             {{ product.ProductName }}
+                                         </a>
+                                     </h2>
+                                  
+                                     <div class="d-flex justify-content-between align-items-center mt-3">
+                                         <div>
+                                             {% if product.Units %}
+                                                 <span class="text-dark">Rs {{ product.Units.0.price }}</span>
+                                             {% endif %}
+                                         </div>
+                                      
+                                         <div>
+                                             <input type="hidden" class="selected-unit-unit" value="{{ product.Units.0.unit }}">
+                                             <input type="hidden" class="selected-unit-amount" value="{{ product.Units.0.quantities }}">
+                                             <input type="hidden" class="selected-unit-price" value="{{ product.Units.0.price }}">
+                                       
+                                             <button class="btn btn-primary btn-sm add-to-cart-btn"
+                                                     data-product-id="{{ product.ProductID }}">
+                                                 <svg xmlns="http://www.w3.org/2000/svg"
+                                                      width="16" height="16"
+                                                      viewBox="0 0 24 24"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round"
+                                                      stroke-linejoin="round"
+                                                      class="feather feather-plus">
+                                                     <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                     <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                 </svg>
+                                                 Add
+                                             </button>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     {% empty %}
+                         <p class="text-center py-4">No products available.</p>
+                     {% endfor %}
+                 </div>
+             </div>
+         </section>
 
          <!-- Popular Products End-->
          <section>

@@ -36,13 +36,11 @@
                                            placeholder="Search sellers by name, email, store, etc." 
                                            aria-label="Search"
                                            value="{{ search_query|default:'' }}" />
-                                    <select class="form-select w-auto" name="status" style="max-width: 150px;">
-                                        <option value="">All Status</option>
-                                        {% for status_key, status_label in status_choices %}
-                                        <option value="{{ status_key }}" {% if status_filter == status_key %}selected{% endif %}>
-                                            {{ status_label }}
-                                        </option>
-                                        {% endfor %}
+                                    <select class="form-select w-auto" name="stat" style="max-width: 150px;">
+                                        <option value="">All Roles</option>
+                                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Reject</option>
                                     </select>
                                     <button class="btn btn-primary" type="submit">
                                         <i class="bi bi-search"></i> Search
@@ -64,9 +62,8 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th>Name</th>
-                                    <th>Email</th>
                                     <th>Store Name</th>
-                                    <th>Store Address</th>
+                                    <th>Store Products</th>
                                     <th>License Number</th>
                                     <th>PAN</th>
                                     <th>Status</th>
@@ -77,9 +74,8 @@
                                 {% for seller in sellers %}
                                 <tr>
                                     <td>{{ seller.UserId.UserName }}</td>
-                                    <td>{{ seller.UserId.Email }}</td>
                                     <td>{{ seller.StoreName }}</td>
-                                    <td>{{ seller.StoreAddress|truncatechars:30 }}</td>
+                                    <td> {{ seller.products.count }} </td>
                                     <td>{{ seller.ProductionLicenseNumber|truncatechars:15 }}</td>
                                     <td>{{ seller.PAN }}</td>
                                     <td>
@@ -111,7 +107,9 @@
                                                 </button>
                                             </form>
                                             {% endif %}
-                                            
+                                            <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#sellerModal{{ seller.SellerID }}">
+                                                <i class="bi bi-eye"></i> See
+                                            </button>
                                         </div>
                                         
                                         <!-- Modal for Seller Details -->
@@ -138,6 +136,7 @@
                                                         <div class="row mt-3">
                                                             <div class="col-12">
                                                                 <p><strong>Production License Number:</strong> {{ seller.ProductionLicenseNumber }}</p>
+                                                                <p><strong>Production Number:</strong> {{ seller.products.count }}</p>
                                                                 <p><strong>Status:</strong> 
                                                                     <span class="badge {% if seller.Status == 'accepted' %}bg-success{% elif seller.Status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
                                                                         {{ seller.get_Status_display }}
@@ -152,6 +151,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -231,54 +231,5 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form on status filter change (optional)
-    const statusSelect = document.querySelector('select[name="status"]');
-    statusSelect.addEventListener('change', function() {
-        // Remove page parameter when filtering
-        const url = new URL(window.location.href);
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
-    });
-    
-    // Show success/error messages
-    {% if messages %}
-    {% for message in messages %}
-    showToast('{{ message.tags }}', '{{ message }}');
-    {% endfor %}
-    {% endif %}
-});
-
-function showToast(type, message) {
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'warning'} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    const toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) {
-        const container = document.createElement('div');
-        container.className = 'toast-container position-fixed top-0 end-0 p-3';
-        document.body.appendChild(container);
-        container.appendChild(toast);
-    } else {
-        toastContainer.appendChild(toast);
-    }
-    
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-}
-</script>
 
 {% endblock %}

@@ -256,8 +256,6 @@ def superadmin_dashboard(request):
 
 @login_required
 @admin_required
-@login_required
-@admin_required
 def admin_profile(request):
     # Get user ID from session
     user_id = request.session.get('uid')
@@ -546,7 +544,7 @@ def delete_user(request, user_id):
 def vendorsrequest(request):
     # Get search query and status filter from GET parameters
     search_query = request.GET.get('q', '')
-    status_filter = request.GET.get('status', '')
+    status_filter = request.GET.get('stat', '')
     
     # Start with all sellers
     sellers_list = Seller.objects.select_related('UserId').all().order_by('-SellerID')

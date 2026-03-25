@@ -19,6 +19,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.views.decorators.csrf import csrf_exempt
 import re
 
+
 @seller_required
 @login_required
 def dashboard(request):
@@ -61,19 +62,32 @@ def dashboard(request):
     # Get all transactions for this seller
     transactions = Transaction.objects.filter(SellerID=seller)
     
-    # Get available years from seller's transactions
+    # Get available years from seller's transactions PLUS current year
+    years_from_transactions = []
     if transactions.exists():
         from django.db.models.functions import ExtractYear
         year_dates = transactions.annotate(
             year=ExtractYear('CreatedAt')
         ).values('year').distinct().order_by('-year')
-        years_range_list = [year['year'] for year in year_dates]
-    else:
-        years_range_list = []
+        years_from_transactions = [year['year'] for year in year_dates]
     
-    # If no years found, add current year
-    if not years_range_list:
-        years_range_list = [today.year]
+    # Always include current year in the list
+    if today.year not in years_from_transactions:
+        years_from_transactions.append(today.year)
+    
+    # Sort years in descending order
+    years_from_transactions.sort(reverse=True)
+    
+    # Also include a few recent years (last 3 years) for better UX
+    current_year = today.year
+    recent_years = list(range(current_year - 2, current_year + 1))
+    
+    # Combine both lists and remove duplicates
+    all_years = list(set(years_from_transactions + recent_years))
+    all_years.sort(reverse=True)
+    
+    # Limit to reasonable range (last 10 years max)
+    years_range_list = all_years[:10]
     
     # ========== CREATE DATE RANGE FOR SELECTED MONTH/YEAR ==========
     month_start = datetime(selected_year, selected_month, 1)
@@ -274,13 +288,12 @@ def dashboard(request):
         'selected_month_orders': selected_month_orders,
         'selected_month_customers': selected_month_customers,
         'months': months_list,
-        'years_range': years_range_list,
+        'years_range': years_range_list,  # This now includes current year
         'sales_chart_data_json': chart_data_json,
         'total_transactions': total_transactions,
     }
     
     return render(request, 'SellerModule/dashboard.html', context)
-
 
 @login_required
 @seller_required
@@ -593,6 +606,7 @@ def ajax_products(request):
     )
 
     return JsonResponse({'html': rows_html, 'pagination': pagination_html})
+
 
 @seller_required
 @login_required
@@ -1123,13 +1137,10 @@ def order_detail_view(request, transaction_id):
         return redirect('/')
     
     try:
-        # 1. Get user
         user = Users.objects.get(UserID=user_id)
         
-        # 2. Get seller
         seller = Seller.objects.get(UserId=user)
         
-        # 3. Get the specific transaction for this seller
         try:
             transaction = Transaction.objects.get(
                 TransactionID=transaction_id,
