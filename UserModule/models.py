@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils import timezone
 
 class Users(models.Model):
     ROLE_CHOICES = (
@@ -95,3 +95,35 @@ class Transaction(models.Model):
     CreatedAt = models.DateTimeField(auto_now_add=True)
     UpdatedAt = models.DateTimeField(auto_now=True)
 
+
+class Feedback(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name  = models.CharField(max_length=100)
+    title      = models.CharField(max_length=100)
+    email      = models.EmailField(max_length=254)
+    phone      = models.CharField(max_length=30, blank=True)
+    message    = models.TextField()
+
+    submitted_by = models.ForeignKey(
+        Users,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="feedbacks",
+    )
+
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    STATUS_CHOICES = [
+        ("new", "New"),
+        ("in_progress", "In Progress"),
+        ("resolved", "Resolved"),
+        ("closed", "Closed"),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="new",
+    )

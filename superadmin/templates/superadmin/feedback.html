@@ -1,0 +1,258 @@
+{% extends 'superadmin.html' %}
+{% load static %}
+
+{% block title %}Feedback{% endblock %}
+
+{% block superadmin %}
+<div class="container">
+    <div class="row mb-8">
+        <div class="col-md-12">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+                <div>
+                    <h2>User Feedback</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#" class="text-inherit">Dashboard</a></li>
+                            <li class="ms-4 active" aria-current="page">Feedback</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-12 col-12 mb-5">
+            <div class="card h-100 card-lg">
+                <div class="p-6">
+                    <div class="row justify-content-between">
+                        <div class="col-md-8 col-12">
+                            <form class="d-flex align-items-center" method="GET" action="{% url 'Feedback' %}">
+                                <div class="input-group">
+                                    <input class="form-control"
+                                           type="search"
+                                           id="searchFeedback"
+                                           name="q"
+                                           placeholder="Search by name, email, subject..."
+                                           aria-label="Search"
+                                           value="{{ search_query|default:'' }}" />
+                                    <select class="form-select w-auto" name="stat" style="max-width: 150px;">
+                                        <option value="">All Status</option>
+                                        <option value="new" {% if status_filter == 'new' %}selected{% endif %}>New</option>
+                                        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                        <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                                        <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Closed</option>
+                                    </select>
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="bi bi-search"></i> Search
+                                    </button>
+                                    {% if search_query or status_filter %}
+                                    <a href="{% url 'Feedback' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-centered table-hover table-borderless mb-0 text-nowrap">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>From</th>
+                                    <th>Subject</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fb in feedbacks %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-semibold">{{ fb.first_name }} {{ fb.last_name }}</span>
+                                            {% if fb.submitted_by %}
+                                            <small class="text-muted">@{{ fb.submitted_by.UserName }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ fb.title|truncatechars:30 }}</td>
+                                    <td>{{ fb.email }}</td>
+                                    <td>{{ fb.phone|default:"—" }}</td>
+                                    <td>
+                                        <span class="badge
+                                            {% if fb.status == 'new' %}bg-warning text-dark
+                                            {% elif fb.status == 'in_progress' %}bg-info text-dark
+                                            {% elif fb.status == 'resolved' %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ fb.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ fb.created_at|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-info btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#fbModal{{ fb.id }}">
+                                                <i class="bi bi-eye"></i> See
+                                            </button>
+
+                                            {% if fb.status != 'resolved' and fb.status != 'closed' %}
+                                            <form method="POST" action="{% url 'feedback_resolve' fb.id %}"
+                                                  onsubmit="return confirm('Mark this feedback as resolved?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-check-circle"></i> Resolve
+                                                </button>
+                                            </form>
+                                            {% endif %}
+
+                                            {% if fb.status != 'closed' %}
+                                            <form method="POST" action="{% url 'feedback_close' fb.id %}"
+                                                  onsubmit="return confirm('Close this feedback?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-secondary btn-sm">
+                                                    <i class="bi bi-archive"></i> Close
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Modal for Feedback Details -->
+                                        <div class="modal fade" id="fbModal{{ fb.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Feedback Details</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p><strong>First Name:</strong> {{ fb.first_name }}</p>
+                                                                <p><strong>Last Name:</strong> {{ fb.last_name }}</p>
+                                                                <p><strong>Email:</strong> {{ fb.email }}</p>
+                                                                <p><strong>Phone:</strong> {{ fb.phone|default:"—" }}</p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p><strong>Subject:</strong> {{ fb.title }}</p>
+                                                                <p><strong>Submitted:</strong> {{ fb.created_at|date:"M d, Y H:i" }}</p>
+                                                                <p><strong>Submitted by:</strong>
+                                                                    {% if fb.submitted_by %}
+                                                                        {{ fb.submitted_by.UserName }}
+                                                                    {% else %}
+                                                                        <em class="text-muted">Anonymous</em>
+                                                                    {% endif %}
+                                                                </p>
+                                                                <p><strong>Status:</strong>
+                                                                    <span class="badge
+                                                                        {% if fb.status == 'new' %}bg-warning text-dark
+                                                                        {% elif fb.status == 'in_progress' %}bg-info text-dark
+                                                                        {% elif fb.status == 'resolved' %}bg-success
+                                                                        {% else %}bg-secondary{% endif %}">
+                                                                        {{ fb.get_status_display }}
+                                                                    </span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row mt-3">
+                                                            <div class="col-12">
+                                                                <div class="card bg-light">
+                                                                    <div class="card-body">
+                                                                        <strong>Message:</strong>
+                                                                        <p class="mb-0 mt-2" style="white-space: pre-wrap;">{{ fb.message }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-chat-square-dots display-1"></i>
+                                            <h5 class="mt-3">No feedback found</h5>
+                                            {% if search_query or status_filter %}
+                                            <p>Try adjusting your search or filters</p>
+                                            <a href="{% url 'Feedback' %}" class="btn btn-primary mt-2">Show All Feedback</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if feedbacks.has_other_pages %}
+                    <div class="border-top d-md-flex justify-content-between align-items-center p-6">
+                        <span>
+                            Showing {{ start_index }} to {{ end_index }} of {{ total_count }} feedback
+                            {% if search_query or status_filter %}
+                            <span class="text-muted">(filtered)</span>
+                            {% endif %}
+                        </span>
+                        <nav class="mt-2 mt-md-0">
+                            <ul class="pagination mb-0">
+                                {% if feedbacks.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}stat={{ status_filter }}&{% endif %}page={{ feedbacks.previous_page_number }}">
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link"><i class="bi bi-chevron-left"></i> Previous</span>
+                                </li>
+                                {% endif %}
+
+                                {% for i in feedbacks.paginator.page_range %}
+                                    {% if feedbacks.number == i %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ i }}</span>
+                                    </li>
+                                    {% elif i > feedbacks.number|add:'-3' and i < feedbacks.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}stat={{ status_filter }}&{% endif %}page={{ i }}">{{ i }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if feedbacks.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if status_filter %}stat={{ status_filter }}&{% endif %}page={{ feedbacks.next_page_number }}">
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Next <i class="bi bi-chevron-right"></i></span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

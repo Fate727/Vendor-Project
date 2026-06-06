@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from decimal import Decimal
-from .models import Users, Cart, Transaction
+from .models import Users, Cart, Transaction, Feedback
 from SellerModule.models import Seller 
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
@@ -21,9 +21,11 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def index(request):
     categories = Category.objects.filter(status='active')
     products = Product.objects.filter(Category__status='active')[:10]
+    bestseller = Product.objects.filter(Category__status='active')[:3]
     return render(request, 'UserModule/Home.html', {
         'categories': categories,
-        'products': products
+        'products': products,
+        'bestseller': bestseller,
     })
 
 
@@ -176,7 +178,6 @@ def Store(request):
     for seller in sellers:
         products = Product.objects.filter(SellerID=seller)[:3]
 
-
         subcategories = []
         for prod in products:
             for sub in prod.SubCategories:
@@ -211,13 +212,13 @@ def SignIn(request):
             user = None
 
         if user and check_password(password, user.Password):
-            # Save session
             request.session['uid'] = user.UserID
             request.session['uname'] = user.UserName
             request.session['role'] = user.Role
 
             # Set session to expire after 24 hours
-            request.session.set_expiry(24 * 60 * 60)  # 24 hours in seconds
+            #And Later on Update the remember me part where when it is done make it last longer 1 month 9r 20 days.
+            request.session.set_expiry(24 * 60 * 60)
 
             # Update LastLogin in the database
             user.LoginAt = timezone.now()
@@ -232,7 +233,6 @@ def SignIn(request):
             else:
                 return redirect("user-index")
 
-        # Invalid credentials
         messages.error(request, "Invalid username or password.")
     
     return render(request, "UserModule/SignIn.html")
@@ -249,7 +249,7 @@ def SignUp(request):
         password = request.POST.get('password', '').strip()
         confirm_password = request.POST.get('confirm_password', '').strip()
         
-        # Default role is 'basic' - removed from form
+        # Default role is 'basic'
         role = 'basic'
 
         # Validation flags
@@ -340,25 +340,70 @@ def SignUp(request):
 def Forgot(request):
     return render(request, 'UserModule/Forgot.html')
 
+@role_based_redirect
 def About(request):
     return render(request, 'UserModule/About.html')
 
+@role_based_redirect
 def Contact(request):
-    return render(request, 'UserModule/Contact.html')
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name  = request.POST.get("last_name", "").strip()
+        title      = request.POST.get("title", "").strip()
+        email      = request.POST.get("email", "").strip()
+        phone      = request.POST.get("phone", "").strip()
+        message    = request.POST.get("message", "").strip()
+
+        # Server-side validation
+        errors = {}
+        if not first_name:
+            errors["first_name"] = "First name is required."
+        if not last_name:
+            errors["last_name"] = "Last name is required."
+        if not title:
+            errors["title"] = "Subject is required."
+        if not email:
+            errors["email"] = "Email is required."
+        elif "@" not in email:
+            errors["email"] = "Enter a valid email."
+        if not message:
+            errors["message"] = "Message is required."
+
+        if errors:
+            for msg in errors.values():
+                messages.error(request, msg)
+            return render(request, "UserModule/Contact.html", {
+                "first_name": first_name,
+                "last_name":  last_name,
+                "title":      title,
+                "email":      email,
+                "phone":      phone,
+                "message":    message,
+            })
+        
+        user = getattr(request, "user_obj", None)
+
+        Feedback.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            title=title,
+            email=email,
+            phone=phone,
+            message=message,
+            submitted_by=user,
+        )
+
+        messages.success(request, "Thank you! Your inquiry has been submitted.")
+        return redirect("Contact-index")
+
+    return render(request, "UserModule/Contact.html")
+
 
 # All cart features sections
 @login_required
 @role_based_redirect
 def Carts(request):
-    if 'uid' not in request.session:
-        return redirect('SignIn-index')
-
-    user_id = request.session['uid']
-
-    try:
-        user = Users.objects.get(UserID=user_id)
-    except Users.DoesNotExist:
-        return redirect('SignIn-index')
+    user = request.user_obj
 
     cart_items = Cart.objects.filter(
         UserID=user,
@@ -393,11 +438,7 @@ def add_to_cart(request, product_id):
 
     try:
         # Get user from session
-        user_id = request.session.get("uid")
-        if not user_id:
-            return JsonResponse({"status": "error", "redirect": "/SignIn"}, status=401)
-
-        user = Users.objects.get(UserID=user_id)
+        user = request.user_obj
 
         # Parse POST data
         data = json.loads(request.body.decode("utf-8"))
@@ -503,25 +544,8 @@ def remove_cart_item(request):
 @transaction.atomic
 def checkout(request):
     if request.method == "POST":
-        session_uid = request.session.get('uid')
-        if not session_uid:
-            messages.error(request, "Please login first to proceed with checkout.")
-            return redirect("login")
-        try:
-            user = Users.objects.get(UserID=session_uid)
-            
-            if user.Role == "basic":
-                pass
-            elif user.Role == "seller":
-                messages.warning(request, "Sellers cannot place orders.")
-                return redirect("seller-dashboard")
-            elif user.Role == "admin":
-                messages.warning(request, "Admins cannot place orders.")
-                return redirect("superadmin_dashboard")
-        except Users.DoesNotExist:
-            messages.error(request, "User not found. Please login again.")
-            return redirect("login")
-
+        user = request.user_obj
+        
         payment_method = request.POST.get("payment", "Cash")
 
         cart_items = Cart.objects.filter(UserID=user, Status="active").select_related('ProductID')
@@ -539,7 +563,7 @@ def checkout(request):
                 out_of_stock_items.append(product.ProductName)
                 continue
 
-            # Deduct stock
+            # Deduct stocks
             product.Stock -= item.Quantity
             product.save()
 
@@ -576,8 +600,7 @@ def checkout(request):
             )
             return redirect("Cart")
 
-        # 7️⃣ Deactivate cart items (only after successful processing)
-        cart_items.update(Status="inactive")
+        cart_items.delete()
 
         if out_of_stock_items:
             messages.success(
@@ -596,15 +619,7 @@ def checkout(request):
 @login_required
 @role_based_redirect
 def Order(request):
-    # 1️⃣ Check session user
-    session_uid = request.session.get('uid')
-    if not session_uid:
-        return redirect("login")
-
-    try:
-        user = Users.objects.get(UserID=session_uid)
-    except Users.DoesNotExist:
-        return redirect("login")
+    user = request.user_obj
 
     # 2️⃣ Fetch orders for this user
     orders = Transaction.objects.filter(UserID=user).order_by('-CreatedAt')
@@ -632,14 +647,7 @@ def Order(request):
 @login_required
 @role_based_redirect
 def AccountSetting(request):
-    session_uid = request.session.get('uid')
-    if not session_uid:
-        return redirect("login")  # redirect if not logged in
-
-    try:
-        user = Users.objects.get(UserID=session_uid)
-    except Users.DoesNotExist:
-        return redirect("login")
+    user = request.user_obj
 
     if request.method == 'POST':
         # Check which form was submitted
@@ -663,7 +671,7 @@ def AccountSetting(request):
             if not username or len(username) > 50:
                 messages.error(request, "Please enter a valid username (max 50 characters)")
                 is_valid = False
-            elif Users.objects.filter(UserName=username).exclude(UserID=session_uid).exists():
+            elif Users.objects.filter(UserName=username).exclude(UserID=user.UserID).exists():
                 messages.error(request, "Username already taken by another account")
                 is_valid = False
             
@@ -672,7 +680,7 @@ def AccountSetting(request):
             if not email or not re.match(email_regex, email):
                 messages.error(request, "Please enter a valid email address")
                 is_valid = False
-            elif Users.objects.filter(Email=email).exclude(UserID=session_uid).exists():
+            elif Users.objects.filter(Email=email).exclude(UserID=user.UserID).exists():
                 messages.error(request, "Email already registered with another account")
                 is_valid = False
             
@@ -743,6 +751,7 @@ def AccountSetting(request):
 @role_based_redirect
 def Address(request):
     return render(request, 'UserModule/Address.html')
+
 
 @login_required
 @role_based_redirect

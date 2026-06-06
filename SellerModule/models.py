@@ -32,7 +32,6 @@ class Seller(models.Model):
 ======================
 Category Module
 ======================
-
 """
 
 class Category(models.Model):
@@ -64,7 +63,7 @@ class Product(models.Model):
 
     SubCategories = models.JSONField(default=list, blank=True)           # e.g. ["Electronics", "Laptops", "Gaming"]
     Units = models.JSONField(default=list, blank=True)                   # e.g. [{"unit":"kg","amount":1,"price":10}]
-    Stock = models.IntegerField(default=0)                               # total stock available
+    Stock = models.IntegerField(default=0)                                 # total stock available
     Specifications = models.JSONField(default=list, blank=True)          # e.g. [{"spec":"Weight","value":"12kg"}]
     Images = models.JSONField(default=list, blank=True)                  # e.g. ["img1.jpg","img2.jpg"]
     Description = models.TextField(blank=True, null=True)                # Product description
@@ -82,8 +81,6 @@ class Product(models.Model):
                         Name=subcat,
                         CategoryID=self.Category
                     )
-
-
 
 class Tag(models.Model):
     TagID = models.AutoField(primary_key=True)

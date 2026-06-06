@@ -133,37 +133,37 @@ def dashboard(request):
     
     # ========== CHART DATA FOR SELECTED MONTH ==========
     import calendar
+
     days_in_month = calendar.monthrange(selected_year, selected_month)[1]
-    
+
     # Initialize arrays for the month
     date_labels = [f"Day {day}" for day in range(1, days_in_month + 1)]
     daily_totals = [0] * days_in_month
     daily_breakdown = {str(i): [] for i in range(days_in_month)}
-    
+
     # Group transactions by day
     for transaction in selected_month_transactions:
         day_index = transaction.CreatedAt.day - 1  # 0-based index
         if 0 <= day_index < len(daily_totals):
             # Add to daily total
             daily_totals[day_index] += float(transaction.TotalAmount or 0)
-            
+
             # Add product breakdown if available
             try:
                 if transaction.Products:
                     products_data = transaction.Products
-                    
+
                     if isinstance(products_data, str):
                         import json as json_module
                         products_data = json_module.loads(products_data)
-                    
+
                     if isinstance(products_data, list) and len(products_data) > 0:
                         for product_item in products_data:
                             if isinstance(product_item, dict):
                                 product_name = product_item.get('product_name', 'Product')
                                 quantity = product_item.get('quantity', 1)
                                 unit_price = product_item.get('unit_price', 0)
-                                
-                                # Add product info for each quantity
+
                                 for _ in range(int(quantity)):
                                     daily_breakdown[str(day_index)].append({
                                         'name': product_name[:20] + "..." if len(product_name) > 20 else product_name,
@@ -171,38 +171,25 @@ def dashboard(request):
                                     })
             except Exception as e:
                 print(f"Error processing product breakdown: {e}")
-    
-    # Filter to only show days with sales
-    filtered_labels = []
-    filtered_totals = []
-    filtered_breakdown = {}
-    
-    for i, total in enumerate(daily_totals):
-        if total > 0:
-            filtered_labels.append(f"Day {i+1}")
-            filtered_totals.append(total)
-            filtered_breakdown[str(len(filtered_totals) - 1)] = daily_breakdown[str(i)]
-    
-    # If no sales in selected month, show example data for first 7 days
-    if not filtered_totals:
-        # Show example for first 7 days of the month
-        filtered_labels = [f"Day {day}" for day in range(1, 8) if day <= days_in_month]
-        filtered_totals = [0] * len(filtered_labels)
-        filtered_breakdown = {str(i): [] for i in range(len(filtered_labels))}
-    
+
+    # ✅ Use full month data (no filtering)
+    filtered_labels = date_labels
+    filtered_totals = daily_totals
+    filtered_breakdown = daily_breakdown
+
     # Prepare chart data
     chart_data = {
         'daily_totals': filtered_totals,
         'daily_breakdown': filtered_breakdown,
         'date_labels': filtered_labels,
         'has_sales_data': any(total > 0 for total in filtered_totals),
-        'total_last_7_days': sum(filtered_totals[:7]) if filtered_totals else 0
+        'total_month': sum(filtered_totals)  # ✅ updated from last 7 days
     }
-    
+
     chart_data_json = json.dumps(chart_data)
     
     # ========== RECENT ORDERS (Always show latest 10) ==========
-    recent_transactions = transactions.order_by('-CreatedAt')[:10]
+    recent_transactions = transactions.order_by('-CreatedAt')[:8]
     recent_orders = []
     
     for transaction in recent_transactions:
@@ -298,25 +285,10 @@ def dashboard(request):
 @login_required
 @seller_required
 def seller_profile(request):
-    # Get user ID from session (using 'uid' as per your logs)
-    user_id = request.session.get('uid')
     
-    if not user_id:
-        messages.error(request, "Please login to access seller profile")
-        return redirect('login')
-    
-    try:
-        user = Users.objects.get(UserID=user_id)
-    except Users.DoesNotExist:
-        messages.error(request, "User not found")
-        return redirect('login')
-    
-    try:
-        seller = Seller.objects.get(UserId=user)
-    except Seller.DoesNotExist:
-        messages.error(request, "Seller profile not found. Please complete seller registration.")
-        return redirect('requestseller')
-    
+    user = request.user_obj
+    seller = request.seller_obj
+
     if request.method == 'POST':
         form_type = request.POST.get('form_type', '')
         
@@ -607,7 +579,6 @@ def ajax_products(request):
 
     return JsonResponse({'html': rows_html, 'pagination': pagination_html})
 
-
 @seller_required
 @login_required
 def categorySection(request):
@@ -634,7 +605,6 @@ def categorySection(request):
         'initial_total': categories.count()
     }
     return render(request, 'SellerModule/CategorySection.html', context)
-
 
 def ajax_categories(request):
     q = request.GET.get('q', '').strip()

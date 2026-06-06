@@ -59,10 +59,22 @@
                            </div>
 
                            <div class="mt-3 row justify-content-start g-2 align-items-center">
-                               <button type="button" id="AddToCartBtn" class="btn btn-primary" data-product-id="{{ product.ProductID }}">
-                                   <i class="feather-icon icon-shopping-bag me-2"></i>
-                                   Add to cart
-                               </button>
+                               <button type="button"
+                                        id="AddToCartBtn"
+                                        class="btn btn-primary"
+                                        data-product-id="{{ product.ProductID }}"
+                                        {% if not request.session.uid or product.stock == 0 %} disabled style="cursor:not-allowed;" {% endif %}>
+                                    <i class="feather-icon icon-shopping-bag me-2"></i>
+                                    Add to cart
+                                </button>
+                                    {% if not request.session.uid %}
+                                        <div class="signin-alert">
+                                            <small class="alert-text">⚠️ Sign in first</small>
+                                            <a href="{% url 'SignIn-index' %}" class="alert-link">Sign In</a>
+                                        </div>
+                                    {% endif %}
+
+                                    <small id="stock-status" style="color:red;"></small>
                                </div>
                                  <h5 class="mt-6 text-dark" style="font-family: 'Arial', sans-serif;">Description</h5>
                                  <div class="mb-4 mt-2" id="quickViewModalDescription"></div>
@@ -150,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const addToCartBtn = document.getElementById("AddToCartBtn");
             const mainContainer = document.getElementById('productModal');
             const thumbContainer = document.getElementById('productModalThumbnails');
+            const stockStatus = document.getElementById("stock-status");
 
             label.textContent = "Loading...";
             category.textContent = "";
@@ -170,6 +183,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById("Stock").textContent = data.stock > 0 ? `In Stock - ${data.stock}` : `Out of Stock`;
                     document.getElementById("ProductType").textContent = data.category || "N/A";
                     document.getElementById("Company").textContent = data.company || "N/A";
+
+
+                   if (data.stock === 0) {
+                        addToCartBtn.disabled = true;
+                        addToCartBtn.style.cursor = "not-allowed";
+                        stockStatus.textContent = `⚠️ Out of Stock`;
+                    } else {
+                        addToCartBtn.disabled = false;
+                        addToCartBtn.style.cursor = "pointer";
+                    }
 
                     // Subcategories
                     if (data.subcategories?.length) {
@@ -329,6 +352,7 @@ document.addEventListener("click", function (e) {
     })
     .then(res => {
         if (res.status === 401) {
+            alert(`Sign In First to Add to cart!`);
             window.location.href = "/SignIn";
             return;
         }
@@ -338,6 +362,7 @@ document.addEventListener("click", function (e) {
         if (!data) return;
 
         if (data.error) {
+           
             console.error(data.error);
             Swal.fire({
                 icon: "error",

@@ -88,11 +88,8 @@ def seller_required(view_func):
                 print(f"[SELLER_REQUIRED] Seller found: {seller.StoreName}, Status: {seller.Status}")
                 
                 if seller.Status != 'accepted':
-                    if seller.Status == 'pending':
-                        messages.warning(request, "Your seller request is still under review.")
-                        return redirect('requestseller')
-                    elif seller.Status == 'rejected':
-                        messages.error(request, "Your seller request was rejected.")
+                    if seller.Status == 'pending' or seller.Status == 'rejected':
+                        messages.warning(request, f"Your seller request is still under review. And Status is {seller.Status}")
                         return redirect('requestseller')
                     else:
                         messages.error(request, "Seller application not approved.")

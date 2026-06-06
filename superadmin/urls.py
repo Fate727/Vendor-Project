@@ -16,10 +16,12 @@ urlpatterns = [
     path('vendorrequests/accept/<int:seller_id>/', views.seller_accept, name='seller_accept'),
     path('vendorrequests/reject/<int:seller_id>/', views.seller_reject, name='seller_reject'),
 
-    # add transcations
+    # Transcations
     
-    
-    # algorithm
+    #Feedback
+    path('Feedback/', views.feedback_list, name='Feedback'),
+    path('Feedback/<int:pk>/resolve/', views.feedback_resolve, name='feedback_resolve'),
+    path('Feedback/<int:pk>/close/', views.feedback_close, name='feedback_close'),  
 
     path('logout', views.logout_user, name='logout'),
 

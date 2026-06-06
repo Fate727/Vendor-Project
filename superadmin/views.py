@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
-from UserModule.models import Transaction, Users
+from UserModule.models import Transaction, Users, Feedback
 from SellerModule.models import Seller, Product
 from UserModule.models import Users
 from django.utils import timezone
@@ -12,6 +12,7 @@ import json
 from datetime import timedelta, datetime
 from django.db.models import Sum, Count, Q
 import re
+from django.views.decorators.http import require_POST
 
 @admin_required
 def superadmin_dashboard(request):
@@ -623,3 +624,64 @@ def logout_user(request):
     request.session.flush()  # clear session
     messages.success(request, "You have been logged out successfully.")
     return redirect('SignIn-index') 
+
+
+
+@login_required
+@admin_required
+def feedback_list(request):
+    search_query = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("stat", "").strip()
+
+    qs = Feedback.objects.select_related("submitted_by").order_by("-created_at")
+
+    if search_query:
+        qs = qs.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(title__icontains=search_query) |
+            Q(message__icontains=search_query)
+        )
+
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    paginator = Paginator(qs, 20)
+    page_number = request.GET.get("page", 1)
+    feedbacks = paginator.get_page(page_number)
+
+    start_index = feedbacks.start_index()
+    end_index = feedbacks.end_index()
+    total_count = paginator.count
+
+    return render(request, "superadmin/feedback.html", {
+        "feedbacks": feedbacks,
+        "search_query": search_query,
+        "status_filter": status_filter,
+        "start_index": start_index,
+        "end_index": end_index,
+        "total_count": total_count,
+    })
+
+
+@login_required
+@admin_required
+@require_POST
+def feedback_resolve(request, pk):
+    fb = get_object_or_404(Feedback, pk=pk)
+    fb.status = "resolved"
+    fb.save()
+    messages.success(request, f"Feedback from {fb.first_name} marked as resolved.")
+    return redirect("Feedback")
+
+
+@login_required
+@admin_required
+@require_POST
+def feedback_close(request, pk):
+    fb = get_object_or_404(Feedback, pk=pk)
+    fb.status = "closed"
+    fb.save()
+    messages.info(request, f"Feedback from {fb.first_name} closed.")
+    return redirect("Feedback")
