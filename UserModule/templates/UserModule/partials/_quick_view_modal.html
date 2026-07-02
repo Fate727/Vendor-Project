@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (data.specifications?.length) {
                         data.specifications.forEach(spec => {
                             const row = document.createElement("tr");
-                            row.innerHTML = `<td>${spec.name}</td><td>${spec.value}</td>`;
+                            row.innerHTML = `<td>${spec.key}</td><td>${spec.value}</td>`;
                             specsTableBody.appendChild(row);
                         });
                     } else {
@@ -220,8 +220,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             const btn = document.createElement("button");
                             btn.type = "button";
                             btn.className = "btn btn-outline-secondary me-2 unit-btn";
-                            btn.textContent = `${unitItem.quantities}${unitItem.unit}`;
-                            btn.dataset.amount = unitItem.quantities;
+                            btn.textContent = `${unitItem.amount}${unitItem.unit}`;
+                            btn.dataset.amount = unitItem.amount;
                             btn.dataset.unit = unitItem.unit;
                             btn.dataset.price = unitItem.price;
 

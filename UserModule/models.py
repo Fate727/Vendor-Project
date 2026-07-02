@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+ 
 class Users(models.Model):
     ROLE_CHOICES = (
         ('basic', 'Basic User'),
@@ -96,6 +97,8 @@ class Transaction(models.Model):
     UpdatedAt = models.DateTimeField(auto_now=True)
 
 
+
+
 class Feedback(models.Model):
     first_name = models.CharField(max_length=100)
     last_name  = models.CharField(max_length=100)
@@ -127,3 +130,49 @@ class Feedback(models.Model):
         choices=STATUS_CHOICES,
         default="new",
     )
+
+
+class ProductAnalytics(models.Model):
+    AnalyticsID = models.AutoField(primary_key=True)
+
+    ProductID = models.ForeignKey(
+        "SellerModule.Product",
+        on_delete=models.CASCADE,
+        related_name="analytics"
+    )
+
+    SellerID = models.ForeignKey(
+        "SellerModule.Seller",
+        on_delete=models.CASCADE,
+        related_name="product_analytics"
+    )
+
+    TotalSales = models.PositiveIntegerField(default=0)
+    SalesLast30Days = models.PositiveIntegerField(default=0)
+    AvgSalesPerDay = models.FloatField(default=0)
+
+    Revenue = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+
+    Price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    LastSaleDate = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    DaysSinceLastSale = models.PositiveIntegerField(default=0)
+
+    UpdatedAt = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("ProductID", "SellerID")
+
+    def __str__(self):
+        return f"{self.ProductID.ProductName} - {self.SellerID.StoreName}"

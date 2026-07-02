@@ -672,7 +672,7 @@ def AddProduct(request):
             if i < len(unit_quantities) and i < len(unit_prices):
                 units.append({
                     "unit": unit_names[i],
-                    "quantities": unit_quantities[i],
+                    "amount": unit_quantities[i],
                     "price": unit_prices[i],
                 })
 
@@ -680,7 +680,7 @@ def AddProduct(request):
         for i in range(len(spec_names)):
             if i < len(spec_values):
                 specifications.append({
-                    "name": spec_names[i],
+                    "key": spec_names[i],
                     "value": spec_values[i],
                 })
 
@@ -770,7 +770,7 @@ def edit_product(request, product_id):
         unit_prices = request.POST.getlist('unit_price[]')
 
         product.Units = [
-            {'unit': unit_names, 'quantities': unit_quantities, 'price': unit_prices} for unit_names, unit_quantities, unit_prices 
+            {'unit': unit_names, 'amount': unit_quantities, 'price': unit_prices} for unit_names, unit_quantities, unit_prices 
             in zip(unit_names, unit_quantities, unit_prices) if unit_names and unit_quantities and unit_prices
         ]
        
@@ -779,7 +779,7 @@ def edit_product(request, product_id):
         spec_names = request.POST.getlist('spec_name[]')
         spec_values = request.POST.getlist('spec_value[]')
         product.Specifications = [
-            {'name': n, 'value': v} for n, v in zip(spec_names, spec_values) if n and v
+            {'key': n, 'value': v} for n, v in zip(spec_names, spec_values) if n and v
         ]
 
         # Description

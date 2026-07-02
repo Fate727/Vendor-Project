@@ -200,32 +200,51 @@ def Store(request):
         'total_sellers': total_sellers
     })
 
-@role_based_redirect    
+ 
 def SignIn(request):
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "").strip()
 
+        print("=" * 50)
+        print("Entered Username:", repr(username))
+        print("Entered Password:", repr(password))
+
+        print("Exact Exists:", Users.objects.filter(UserName=username).exists())
+        print("Case-Insensitive Exists:", Users.objects.filter(UserName__iexact=username).exists())
+
         try:
             user = Users.objects.get(UserName=username)
+            print("✅ User Found!")
+            print("UserID:", user.UserID)
+            print("Database Username:", repr(user.UserName))
+            print("Role:", user.Role)
+            print("Stored Password:", user.Password[:30] + "...")
         except Users.DoesNotExist:
+            print("❌ User NOT Found")
             user = None
 
-        if user and check_password(password, user.Password):
+        if user:
+            password_ok = check_password(password, user.Password)
+            print("Password Match:", password_ok)
+        else:
+            password_ok = False
+
+        if user and password_ok:
+            print("✅ LOGIN SUCCESS")
+
             request.session['uid'] = user.UserID
             request.session['uname'] = user.UserName
             request.session['role'] = user.Role
 
-            # Set session to expire after 24 hours
-            #And Later on Update the remember me part where when it is done make it last longer 1 month 9r 20 days.
             request.session.set_expiry(24 * 60 * 60)
 
-            # Update LastLogin in the database
             user.LoginAt = timezone.now()
             user.save()
 
-            # Redirect based on role
             role_lower = user.Role.lower()
+            print("Redirecting as:", role_lower)
+
             if role_lower == "admin":
                 return redirect("superadmin-dashboard")
             elif role_lower == "seller":
@@ -233,8 +252,9 @@ def SignIn(request):
             else:
                 return redirect("user-index")
 
+        print("❌ LOGIN FAILED")
         messages.error(request, "Invalid username or password.")
-    
+
     return render(request, "UserModule/SignIn.html")
 
 

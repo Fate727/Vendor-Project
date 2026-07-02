@@ -42,7 +42,7 @@ class Category(models.Model):
 
     category_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, unique=True)
-    image = models.ImageField(upload_to='category_images/', blank=True, null=True)
+    image = models.ImageField(upload_to='categories/', blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
 
     
@@ -96,3 +96,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return f"{self.Name} ({self.CategoryID.name})"
+    
+
+

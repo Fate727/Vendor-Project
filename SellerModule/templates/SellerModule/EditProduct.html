@@ -68,7 +68,7 @@
                         <input type="text" name="unit_name[]" class="form-control" value="{{ u.unit }}" required />
                     </div>
                     <div class="col-4">
-                        <input type="text" name="unit_quantity[]" class="form-control" value="{{ u.quantities }}" required />
+                        <input type="text" name="unit_quantity[]" class="form-control" value="{{ u.amount }}" required />
                     </div>
                     <div class="col-4">
                         <input type="text" name="unit_price[]" class="form-control" value="{{ u.price }}" required />
@@ -89,7 +89,7 @@
                 {% for spec in specs %}
                 <div class="spec-item row mb-2">
                     <div class="col-5">
-                        <input type="text" name="spec_name[]" class="form-control" value="{{ spec.name }}" required />
+                        <input type="text" name="spec_name[]" class="form-control" value="{{ spec.key }}" required />
                     </div>
                     <div class="col-5">
                         <input type="text" name="spec_value[]" class="form-control" value="{{ spec.value }}" required />
