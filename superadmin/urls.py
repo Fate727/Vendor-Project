@@ -18,11 +18,11 @@ urlpatterns = [
 
     # Transcations
     
+
     #Feedback
     path('Feedback/', views.feedback_list, name='Feedback'),
     path('Feedback/<int:pk>/resolve/', views.feedback_resolve, name='feedback_resolve'),
     path('Feedback/<int:pk>/close/', views.feedback_close, name='feedback_close'),  
 
     path('logout', views.logout_user, name='logout'),
-
 ]

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 import json
-from UserModule.models import Transaction, Users
+from UserModule.models import Transaction, ProductAnalytics, Users
 from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -18,7 +18,7 @@ from django.db.models.functions import ExtractYear
 from django.contrib.auth.hashers import make_password, check_password
 from django.views.decorators.csrf import csrf_exempt
 import re
-
+from ml.service import get_seller_recommendations
 
 @seller_required
 @login_required
@@ -607,6 +607,9 @@ def categorySection(request):
     return render(request, 'SellerModule/CategorySection.html', context)
 
 def ajax_categories(request):
+    """
+    AJAX endpoint for categories with search, filter, and pagination
+    """
     q = request.GET.get('q', '').strip()
     status = request.GET.get('status', '').strip()
     page = int(request.GET.get('page', 1))
@@ -624,15 +627,24 @@ def ajax_categories(request):
         elif status == 'disabled':
             categories = categories.filter(status='disabled')
 
-    # Pagination
-    paginator = Paginator(categories, 10)
+    # Pagination (5 items per page to match main view)
+    paginator = Paginator(categories, 5)
     paged_categories = paginator.get_page(page)
 
     # Render partials
-    rows_html = render_to_string('SellerModule/partials/_category_rows.html', {'categories': paged_categories})
-    pagination_html = render_to_string('SellerModule/partials/_category_pagination.html', {'categories': paged_categories})
+    rows_html = render_to_string(
+        'SellerModule/partials/_category_rows.html', 
+        {'categories': paged_categories}
+    )
+    pagination_html = render_to_string(
+        'SellerModule/partials/_category_pagination.html', 
+        {'categories': paged_categories}
+    )
 
-    return JsonResponse({'html': rows_html, 'pagination': pagination_html})
+    return JsonResponse({
+        'html': rows_html, 
+        'pagination': pagination_html
+    })
 
 @seller_required
 @login_required
@@ -957,91 +969,72 @@ def DeleteCategory(request, category_id):
 @seller_required
 @login_required
 def Order(request):
-    user_id = request.session.get('uid')
-    if not user_id:
-        messages.error(request, "Please login to view orders.")
-        return redirect('/')
+    # Get user and seller from request objects (set by decorators)
+    user = request.user_obj
+    seller = request.seller_obj
     
-    try:
-        # 1. Get user
-        user = Users.objects.get(UserID=user_id)
-        
-        # 2. Get seller using correct field name: UserId
-        seller = Seller.objects.get(UserId=user)
-        
-        # 3. Get transactions for this seller
-        all_transactions = Transaction.objects.filter(SellerID=seller).order_by('-CreatedAt')
-        
-        # 4. Apply search filter
-        search_query = request.GET.get('search', '')
-        transactions_list = []
-        
-        for transaction in all_transactions:
-            # Skip if doesn't match search
-            if search_query:
-                if transaction.Products and len(transaction.Products) > 0:
-                    product_data = transaction.Products[0]
-                    product_name = product_data.get('product_name', '').lower()
-                    if search_query.lower() not in product_name:
-                        continue
-            transactions_list.append(transaction)
-        
-        # 5. Apply status filter
-        status_filter = request.GET.get('status', '')
-        if status_filter:
-            transactions_list = [t for t in transactions_list if t.Status == status_filter]
-        
-        # 6. Get product details for all transactions
-        order_data = []
-        
-        for transaction in transactions_list:
+    # 1. Get transactions for this seller
+    all_transactions = Transaction.objects.filter(SellerID=seller).order_by('-CreatedAt')
+    
+    # 2. Apply search filter
+    search_query = request.GET.get('search', '')
+    transactions_list = []
+    
+    for transaction in all_transactions:
+        # Skip if doesn't match search
+        if search_query:
             if transaction.Products and len(transaction.Products) > 0:
                 product_data = transaction.Products[0]
-                product_id = product_data.get('product_id')
-                
-                # Initialize product object
-                product_obj = None
-                
-                # Try to get the actual Product object
-                if product_id:
-                    try:
-                        product_obj = Product.objects.get(
-                            ProductID=product_id,
-                            SellerID=seller
-                        )
-                    except Product.DoesNotExist:
-                        product_obj = None
-                
-                order_data.append({
-                    'transaction': transaction,
-                    'product_data': product_data,
-                    'product_obj': product_obj,  # This will be None or Product object
-                })
-        
-        # 7. Pagination
-        paginator = Paginator(order_data, 10)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        
-        context = {
-            'orders': page_obj,  # Changed from transactions_data to orders
-            'search_query': search_query,
-            'status_filter': status_filter,
-            'total_orders': len(order_data),
-        }
-        
-        return render(request, 'SellerModule/Order.html', context)
-        
-    except Users.DoesNotExist:
-        messages.error(request, "User not found.")
-        request.session.flush()
-        return redirect('/')
-    except Seller.DoesNotExist:
-        messages.error(request, "Seller profile not found.")
-        return redirect('/seller/')
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('/')
+                product_name = product_data.get('product_name', '').lower()
+                if search_query.lower() not in product_name:
+                    continue
+        transactions_list.append(transaction)
+    
+    # 3. Apply status filter
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        transactions_list = [t for t in transactions_list if t.Status == status_filter]
+    
+    # 4. Get product details for all transactions
+    order_data = []
+    
+    for transaction in transactions_list:
+        if transaction.Products and len(transaction.Products) > 0:
+            product_data = transaction.Products[0]
+            product_id = product_data.get('product_id')
+            
+            # Initialize product object
+            product_obj = None
+            
+            # Try to get the actual Product object
+            if product_id:
+                try:
+                    product_obj = Product.objects.get(
+                        ProductID=product_id,
+                        SellerID=seller
+                    )
+                except Product.DoesNotExist:
+                    product_obj = None
+            
+            order_data.append({
+                'transaction': transaction,
+                'product_data': product_data,
+                'product_obj': product_obj,
+            })
+    
+    # 5. Pagination
+    paginator = Paginator(order_data, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'orders': page_obj,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'total_orders': len(order_data),
+    }
+    
+    return render(request, 'SellerModule/Order.html', context)
     
 @seller_required
 @login_required
@@ -1144,7 +1137,7 @@ def order_detail_view(request, transaction_id):
             for product_data in products_data:
                 print(f"DEBUG: Processing item: {product_data}")
                 
-                product_id = product_data.get('product_id')
+                product_id = product_data.get('product')
                 product_obj = None
                 
                 # Try to get the actual Product object
@@ -1158,13 +1151,19 @@ def order_detail_view(request, transaction_id):
                     except Product.DoesNotExist:
                         print(f"DEBUG: Product with ID {product_id} not found")
                         product_obj = None
+                    
+                product_name = (
+                    product_obj.ProductName 
+                    if product_obj 
+                    else f"Product ID: {product_id}"
+                )
                 
                 # Extract data using your exact keys
-                product_name = product_data.get('product_name', f'Product ID: {product_id}')
-                quantity = product_data.get('quantity', 1)
+                product_name = f"Product ID: {product_id}"
+                quantity = product_data.get('qty', 1)
                 unit = product_data.get('unit', 'piece')
-                price = product_data.get('unit_price', 0)
-                subtotal = product_data.get('subtotal', quantity * price)
+                price = product_data.get('price', 0)
+                subtotal = quantity * price
                 
                 order_item = {
                     'product_data': product_data,
@@ -1224,8 +1223,50 @@ def order_detail_view(request, transaction_id):
         
         messages.error(request, f"An error occurred while loading order details: {str(e)}")
         return redirect('order-seller')
- 
-  
+
+#from django.core.paginator import Paginator
+
+@login_required
+@seller_required
+def Stock(request):
+
+    seller = request.seller_obj
+
+    search = request.GET.get(
+        "q",
+        ""
+    ).strip()
+
+
+    recommendations = get_seller_recommendations(
+        seller=seller,
+        search=search
+    )
+
+
+    paginator = Paginator(
+        recommendations,
+        8
+    )
+
+    page = request.GET.get(
+        "page"
+    )
+
+    recommendations = paginator.get_page(
+        page
+    )
+
+
+    return render(
+        request,
+        "SellerModule/productStock.html",
+        {
+            "recommendations": recommendations,
+            "search_query": search,
+        },
+    )
+
 def logout_accout(request):
     request.session.flush()  # clear session
     messages.success(request, "You have been logged out successfully.")

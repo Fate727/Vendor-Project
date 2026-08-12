@@ -1,23 +1,66 @@
-<ul class="pagination mb-0">
-    {% if categories.has_previous %}
-        <li class="page-item">
-            <a href="#" class="page-link ajax-page" data-page="{{ categories.previous_page_number }}">Previous</a>
-        </li>
-    {% else %}
-        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-    {% endif %}
+<div class="d-flex justify-content-between align-items-center w-100">
+    <div>
+        <p class="mb-0 text-muted">
+            Showing 
+            <span class="fw-semibold">{{ categories.start_index }}</span> 
+            to 
+            <span class="fw-semibold">{{ categories.end_index }}</span> 
+            of 
+            <span class="fw-semibold">{{ categories.paginator.count }}</span> 
+            entries
+        </p>
+    </div>
+    <div>
+        <nav aria-label="Category pagination">
+            <ul class="pagination mb-0">
+                {% if categories.has_previous %}
+                    <li class="page-item">
+                        <a href="#" class="page-link" data-page="{{ categories.previous_page_number }}">
+                            <i class="fe fe-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fe fe-chevron-left"></i> Previous
+                        </span>
+                    </li>
+                {% endif %}
 
-    {% for page_num in categories.paginator.page_range %}
-        <li class="page-item {% if categories.number == page_num %}active{% endif %}">
-            <a href="#" class="page-link ajax-page" data-page="{{ page_num }}">{{ page_num }}</a>
-        </li>
-    {% endfor %}
+                {% for page_num in categories.paginator.page_range %}
+                    {% if page_num == categories.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                    {% elif page_num > categories.number|add:'-3' and page_num < categories.number|add:'3' %}
+                        <li class="page-item">
+                            <a href="#" class="page-link" data-page="{{ page_num }}">{{ page_num }}</a>
+                        </li>
+                    {% elif page_num == 1 or page_num == categories.paginator.num_pages %}
+                        <li class="page-item">
+                            <a href="#" class="page-link" data-page="{{ page_num }}">{{ page_num }}</a>
+                        </li>
+                    {% elif page_num == categories.number|add:'-3' or page_num == categories.number|add:'3' %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
 
-    {% if categories.has_next %}
-        <li class="page-item">
-            <a href="#" class="page-link ajax-page" data-page="{{ categories.next_page_number }}">Next</a>
-        </li>
-    {% else %}
-        <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
-    {% endif %}
-</ul>
+                {% if categories.has_next %}
+                    <li class="page-item">
+                        <a href="#" class="page-link" data-page="{{ categories.next_page_number }}">
+                            Next <i class="fe fe-chevron-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            Next <i class="fe fe-chevron-right"></i>
+                        </span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>

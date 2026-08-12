@@ -1,7 +1,11 @@
 from django.db import models
 from django.utils import timezone
 
- 
+"""
+======================
+User  Module
+======================
+"""
 class Users(models.Model):
     ROLE_CHOICES = (
         ('basic', 'Basic User'),
@@ -24,6 +28,11 @@ class Users(models.Model):
         return f"{self.UserName} ({self.get_Role_display()})"
   
     
+"""
+======================
+Cart Module
+======================
+"""    
 class Cart(models.Model):
     STATUS_CHOICES = (
         ('active', 'Active'),
@@ -57,6 +66,12 @@ class Cart(models.Model):
             amount = self.SelectedUnit.get('amount', '')
             self.UnitType = f"{unit}-{amount}"
         super().save(*args, **kwargs)
+
+"""
+======================
+Transaction Module
+======================
+"""
 
 class Transaction(models.Model):
 
@@ -93,12 +108,15 @@ class Transaction(models.Model):
     )
 
     PaymentMethod = models.CharField(max_length=20, default="Cash")
-    CreatedAt = models.DateTimeField(auto_now_add=True)
+    CreatedAt = models.DateTimeField(default=timezone.now)
     UpdatedAt = models.DateTimeField(auto_now=True)
 
 
-
-
+"""
+======================
+Feedback Module
+======================
+"""
 class Feedback(models.Model):
     first_name = models.CharField(max_length=100)
     last_name  = models.CharField(max_length=100)
@@ -132,6 +150,11 @@ class Feedback(models.Model):
     )
 
 
+"""
+======================
+ProductAnalytics Module
+======================
+"""
 class ProductAnalytics(models.Model):
     AnalyticsID = models.AutoField(primary_key=True)
 
@@ -166,6 +189,12 @@ class ProductAnalytics(models.Model):
         null=True,
         blank=True
     )
+    
+    SalesLast7Days = models.PositiveIntegerField(default=0)
+
+    SalesPrevious7Days = models.PositiveIntegerField(default=0)
+
+    SalesGrowthRate = models.FloatField(default=0)
 
     DaysSinceLastSale = models.PositiveIntegerField(default=0)
 
@@ -176,3 +205,4 @@ class ProductAnalytics(models.Model):
 
     def __str__(self):
         return f"{self.ProductID.ProductName} - {self.SellerID.StoreName}"
+    

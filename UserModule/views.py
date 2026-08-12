@@ -77,7 +77,6 @@ def Shop(request):
     if search_query:
         products = products.filter(ProductName__icontains=search_query)
     
-
     if sort_by == 'newest':
         products = products.order_by('-CreatedAt')
     elif sort_by == 'oldest':

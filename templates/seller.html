@@ -21,7 +21,7 @@
 
         <!-- Theme CSS -->
             <link rel="stylesheet" href="{% static 'assets/css/theme.min.css' %}">
-
+   {% block extra_head %}{% endblock %}
    </head>
 
    <body>
@@ -234,6 +234,14 @@
 							
 						</ul>
 					</div>
+					<div id="navCategoriesOrders" class="collapse " data-bs-parent="#sideNavbar">
+						<ul class="nav flex-column">
+							<li class="nav-item">
+								<a class="nav-link " href="{% url 'stock-product' %}">Stock</a>
+							</li>
+							
+						</ul>
+					</div>
 				</li>
 
 
@@ -299,6 +307,13 @@
 						<ul class="nav flex-column">
 							<li class="nav-item">
 								<a class="nav-link " href="{% url 'order-seller' %}">List</a>
+							</li>
+						</ul>
+					</div>
+					<div id="navOrders" class="collapse " data-bs-parent="#sideNavbar">
+						<ul class="nav flex-column">
+							<li class="nav-item">
+								<a class="nav-link " href="{% url 'stock-product' %}">Stock</a>
 							</li>
 						</ul>
 					</div>

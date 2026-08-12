@@ -614,6 +614,11 @@ def seller_reject(request, seller_id):
         seller = get_object_or_404(Seller, SellerID=seller_id)
         seller.Status = "rejected"
         seller.save()
+       
+        Users = seller.UserId
+        Users.Role = "basic"
+        Users.save()
+        
         messages.error(request, f"Seller request for '{seller.StoreName}' rejected.")
     return redirect("vendorrequest")
 

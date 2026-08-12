@@ -22,7 +22,9 @@ urlpatterns = [
 
     # Prodcut module section 
     path('product/quick-view/<int:product_id>/', views.product_quick_view, name='product_quick_view'),
+    #Add later on a full page product section
     
+
     # Cart Sections
     path('Cart', views.Carts, name="Cart"),
     path('cart/add/<int:product_id>/', views.add_to_cart, name='add_to_cart'),

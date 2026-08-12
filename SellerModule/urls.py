@@ -17,7 +17,8 @@ urlpatterns = [
     path('delete-product-image/<int:product_id>/<int:image_index>/', 
          views.DeleteProductImage, 
          name='delete-product-image'),
-    
+    path('productsStock', views.Stock, name='stock-product'),
+
     # Category Section
     path('category', views.categorySection, name='category-index'),
     path('addcategory', views.AddCategory, name='AddCategory'),

@@ -132,7 +132,6 @@ USE_TZ = True
 #extra import section
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -149,7 +148,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Expire session after 24 hours
 SESSION_COOKIE_AGE = 24 * 60 * 60  # 24 hours in seconds
 
-# Optional: set to True if you want session to end when browser closes
+# True if you want session to end when browser closes
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Media folder configuration
