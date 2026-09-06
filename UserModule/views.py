@@ -31,115 +31,314 @@ def index(request):
 
 @role_based_redirect
 def Shop(request):
+
     categories = Category.objects.all()
     products = Product.objects.all()
-    
-    # Get all tags from Tag model
     all_tags = Tag.objects.all()
 
     selected_categories = []
     selected_tags = []
     search_query = ""
-    sort_by = request.GET.get('sort_by', 'featured')
-    show_per_page = int(request.GET.get('show', 12))
-    page = request.GET.get('page', 1)
 
-    # Handle filters
+    sort_by = request.GET.get("sort_by", "featured")
+
+    try:
+        show_per_page = int(request.GET.get("show", 12))
+        if show_per_page <= 0:
+            show_per_page = 12
+    except (ValueError, TypeError):
+        show_per_page = 12
+
+    page = request.GET.get("page", 1)
+
+    # ---------------------------------------------------
+    # HANDLE FILTERS
+    # ---------------------------------------------------
+
     if request.method == "POST":
+
         selected_categories = request.POST.getlist("categories")
         selected_tags = request.POST.getlist("tags")
         search_query = request.POST.get("search", "").strip()
-    
+
     elif request.method == "GET":
-        selected_categories = request.GET.getlist('categories')
-        selected_tags = request.GET.getlist('tags')
-        search_query = request.GET.get('search', '').strip()
-        
-        # Handle single tag from URL parameter - Add to existing tags
-        if 'tag' in request.GET:
-            tag = request.GET.get('tag')
-            if tag not in selected_tags:
+
+        selected_categories = request.GET.getlist("categories")
+        selected_tags = request.GET.getlist("tags")
+        search_query = request.GET.get("search", "").strip()
+
+        # Single tag from URL
+        if "tag" in request.GET:
+            tag = request.GET.get("tag")
+
+            if tag and tag not in selected_tags:
                 selected_tags.append(tag)
 
-    # Apply filters
+    # ---------------------------------------------------
+    # CATEGORY FILTER
+    # ---------------------------------------------------
+
     if selected_categories:
+
         selected_categories_int = [
-            int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
+            int(cat_id)
+            for cat_id in selected_categories
+            if cat_id.isdigit()
         ]
-        products = products.filter(Category__in=selected_categories_int)
+
+        products = products.filter(
+            Category__in=selected_categories_int
+        )
+
+    # ---------------------------------------------------
+    # TAG FILTER
+    # ---------------------------------------------------
 
     if selected_tags:
+
         tag_filters = Q()
+
         for tag in selected_tags:
-            tag_filters |= Q(SubCategories__contains=[tag])
+            tag_filters |= Q(
+                SubCategories__contains=[tag]
+            )
+
         products = products.filter(tag_filters)
 
-    if search_query:
-        products = products.filter(ProductName__icontains=search_query)
-    
-    if sort_by == 'newest':
-        products = products.order_by('-CreatedAt')
-    elif sort_by == 'oldest':
-        products = products.order_by('CreatedAt')
-    else:
-        # For price sorting, we need to convert to list
-        products_list = list(products)
-        
-        def get_min_price(units):
-            if units and isinstance(units, list) and len(units) > 0:
-                try:
-                    if isinstance(units, str):
-                        units = json.loads(units)
-                    return min([float(unit.get('price', 0)) for unit in units])
-                except:
-                    return 0
-            return 0
-        
-        if sort_by == 'price_low':
-            products_list.sort(key=lambda p: get_min_price(p.Units))
-        elif sort_by == 'price_high':
-            products_list.sort(key=lambda p: get_min_price(p.Units), reverse=True)
-        
-        products = products_list  # Use sorted list
-    
-    # Filter tags based on selected categories
-    filtered_tags = all_tags
-    
-    if selected_categories:
-        selected_categories_int = [
-            int(cat_id) for cat_id in selected_categories if cat_id.isdigit()
-        ]
-        filtered_tags = all_tags.filter(CategoryID__in=selected_categories_int)
+    # ---------------------------------------------------
+    # SEARCH
+    # ---------------------------------------------------
 
-    # Pagination
-    # Check if products is a list or queryset
-    if isinstance(products, list):
-        paginator = Paginator(products, show_per_page)
+    if search_query:
+
+        products = products.filter(
+            ProductName__icontains=search_query
+        )
+
+    # ---------------------------------------------------
+    # SORTING USING PRODUCT ANALYTICS
+    # ---------------------------------------------------
+
+    if sort_by == "most_purchased":
+
+        # Most purchased products
+        products = products.order_by(
+            "-analytics__TotalSales"
+        )
+
+    elif sort_by == "trending":
+
+        # Trending products:
+        # First consider recent 7-day sales,
+        # then sales growth rate.
+        products = products.order_by(
+            "-analytics__SalesLast7Days",
+            "-analytics__SalesGrowthRate",
+            "-analytics__TotalSales"
+        )
+
+    elif sort_by == "fast_moving":
+
+        # Products selling quickly
+        products = products.order_by(
+            "-analytics__AvgSalesPerDay",
+            "-analytics__SalesLast30Days"
+        )
+
+    elif sort_by == "price_low":
+
+        # Price is stored inside Product.Units,
+        # so price sorting still needs Python.
+        products_list = list(products)
+
+        def get_min_price(units):
+
+            if not units:
+                return 0
+
+            try:
+
+                if isinstance(units, str):
+                    units = json.loads(units)
+
+                if isinstance(units, list) and len(units) > 0:
+
+                    prices = []
+
+                    for unit in units:
+
+                        try:
+                            price = float(
+                                unit.get("price", 0)
+                            )
+
+                            prices.append(price)
+
+                        except (ValueError, TypeError):
+                            continue
+
+                    if prices:
+                        return min(prices)
+
+            except (ValueError, TypeError, json.JSONDecodeError):
+                pass
+
+            return 0
+
+        products_list.sort(
+            key=lambda product: get_min_price(product.Units)
+        )
+
+        products = products_list
+
+    elif sort_by == "price_high":
+
+        products_list = list(products)
+
+        def get_min_price(units):
+
+            if not units:
+                return 0
+
+            try:
+
+                if isinstance(units, str):
+                    units = json.loads(units)
+
+                if isinstance(units, list) and len(units) > 0:
+
+                    prices = []
+
+                    for unit in units:
+
+                        try:
+                            price = float(
+                                unit.get("price", 0)
+                            )
+
+                            prices.append(price)
+
+                        except (ValueError, TypeError):
+                            continue
+
+                    if prices:
+                        return min(prices)
+
+            except (ValueError, TypeError, json.JSONDecodeError):
+                pass
+
+            return 0
+
+        products_list.sort(
+            key=lambda product: get_min_price(product.Units),
+            reverse=True
+        )
+
+        products = products_list
+
+    elif sort_by == "newest":
+
+        products = products.order_by(
+            "-CreatedAt"
+        )
+
+    elif sort_by == "oldest":
+
+        products = products.order_by(
+            "CreatedAt"
+        )
+
     else:
-        paginator = Paginator(products, show_per_page)
-    
+        # ------------------------------------------------
+        # FEATURED
+        # ------------------------------------------------
+        #
+        # Featured can use a combination of:
+        # - recent sales
+        # - total sales
+        # - growth
+        #
+        products = products.order_by(
+            "-analytics__SalesLast7Days",
+            "-analytics__SalesGrowthRate",
+            "-analytics__TotalSales"
+        )
+
+    # ---------------------------------------------------
+    # FILTER TAGS BASED ON CATEGORY
+    # ---------------------------------------------------
+
+    filtered_tags = all_tags
+
+    if selected_categories:
+
+        selected_categories_int = [
+            int(cat_id)
+            for cat_id in selected_categories
+            if cat_id.isdigit()
+        ]
+
+        filtered_tags = all_tags.filter(
+            CategoryID__in=selected_categories_int
+        )
+
+    # ---------------------------------------------------
+    # PAGINATION
+    # ---------------------------------------------------
+
+    paginator = Paginator(
+        products,
+        show_per_page
+    )
+
     try:
+
         products_page = paginator.page(page)
+
     except PageNotAnInteger:
+
         products_page = paginator.page(1)
+
     except EmptyPage:
-        products_page = paginator.page(paginator.num_pages)
+
+        products_page = paginator.page(
+            paginator.num_pages
+        )
+
+    # ---------------------------------------------------
+    # CONTEXT
+    # ---------------------------------------------------
 
     context = {
+
         "categories": categories,
+
         "products": products_page,
+
         "all_tags": filtered_tags,
+
         "selected_categories": selected_categories,
+
         "selected_tags": selected_tags,
+
         "search_query": search_query,
+
         "sort_by": sort_by,
+
         "show_per_page": show_per_page,
+
         "current_page": products_page.number,
+
         "total_pages": paginator.num_pages,
+
         "total_products": paginator.count,
     }
-    return render(request, "UserModule/Shop.html", context)
 
+    return render(
+        request,
+        "UserModule/Shop.html",
+        context
+    )
 
 @role_based_redirect
 def product_quick_view(request, product_id):
@@ -636,32 +835,67 @@ def checkout(request):
     return redirect("Cart")
 
 @login_required
-@role_based_redirect
 def Order(request):
     user = request.user_obj
 
-    # 2️⃣ Fetch orders for this user
-    orders = Transaction.objects.filter(UserID=user).order_by('-CreatedAt')
+    # Get all orders belonging to the logged-in user
+    orders = Transaction.objects.filter(
+        UserID=user
+    ).order_by('-CreatedAt')
 
-    # 3️⃣ Attach product images to each product in JSON
+    # Attach product information to each product
     for order in orders:
         for product in order.Products:
             try:
-                prod_obj = Product.objects.get(ProductID=product["product_id"])
-                # Assuming Images is a list or JSONField storing image paths
-                if hasattr(prod_obj, "Images") and prod_obj.Images:
-                    product["image"] = prod_obj.Images[0]  # first image
-                else:
-                    product["image"] = ""  # fallback if no image
-            except Product.DoesNotExist:
-                product["image"] = ""  # fallback if product missing
+                # Your JSON uses "product", not "product_id"
+                product_id = product["product"]
 
-    # 4️⃣ Pass orders to template
+                # Get the actual Product object
+                prod_obj = Product.objects.get(
+                    ProductID=product_id
+                )
+
+                # Product name
+                product["product_name"] = prod_obj.ProductName
+
+                # Product image
+                if prod_obj.Images:
+                    product["image"] = prod_obj.Images[0]
+                else:
+                    product["image"] = ""
+
+                # Quantity
+                product["quantity"] = product.get("qty", 0)
+
+                # Calculate subtotal
+                quantity = product.get("qty", 0)
+                price = product.get("price", 0)
+
+                product["subtotal"] = quantity * price
+
+            except Product.DoesNotExist:
+                product["product_name"] = "Product unavailable"
+                product["image"] = ""
+
+                product["quantity"] = product.get("qty", 0)
+
+                quantity = product.get("qty", 0)
+                price = product.get("price", 0)
+
+                product["subtotal"] = quantity * price
+
+            except KeyError as e:
+                print(f"Missing product field: {e}")
+
     context = {
         "orders": orders
     }
 
-    return render(request, 'UserModule/Order.html', context)
+    return render(
+        request,
+        'UserModule/Order.html',
+        context
+    )
 
 @login_required
 @role_based_redirect

@@ -141,12 +141,48 @@
                                 </select>
                             </div>
                             <div>
-                                <select class="form-select" id="sortSelect" name="sort_by">
-                                    <option value="featured" {% if sort_by == 'featured' %}selected{% endif %}>Sort by: Featured</option>
-                                    <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
-                                    <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
-                                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
-                                    <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+                               <select class="form-select" id="sortSelect" name="sort_by">
+
+                                    <option value="featured"
+                                        {% if sort_by == 'featured' %}selected{% endif %}>
+                                        Sort by: Featured
+                                    </option>
+                                
+                                    <option value="trending"
+                                        {% if sort_by == 'trending' %}selected{% endif %}>
+                                        Trending
+                                    </option>
+                                
+                                    <option value="most_purchased"
+                                        {% if sort_by == 'most_purchased' %}selected{% endif %}>
+                                        Most Purchased
+                                    </option>
+                                
+                                    <option value="fast_moving"
+                                        {% if sort_by == 'fast_moving' %}selected{% endif %}>
+                                        Fast Moving
+                                    </option>
+                                
+                                    <option value="price_low"
+                                        {% if sort_by == 'price_low' %}selected{% endif %}>
+                                        Price: Low to High
+                                    </option>
+                                
+                                    <option value="price_high"
+                                        {% if sort_by == 'price_high' %}selected{% endif %}>
+                                        Price: High to Low
+                                    </option>
+                                
+                                    <option value="newest"
+                                        {% if sort_by == 'newest' %}selected{% endif %}>
+                                        Newest First
+                                    </option>
+                                
+                                    <option value="oldest"
+                                        {% if sort_by == 'oldest' %}selected{% endif %}>
+                                        Oldest First
+                                    </option>
+                                
                                 </select>
                             </div>
                         </div>
